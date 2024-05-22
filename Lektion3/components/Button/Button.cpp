@@ -3,15 +3,9 @@
 
 Button::Button(gpio_num_t pin):pin(pin)
 {
-
 }
 
 Button::~Button()
 {
-
 }
 
-void Button::Update()
-{
-
-}

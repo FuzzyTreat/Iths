@@ -14,8 +14,5 @@
     ],
     "idf.portWin": "COM3",
     "idf.pythonBinPathWin": "C:\\Users\\Per\\.espressif\\python_env\\idf5.2_py3.11_env\\Scripts\\python.exe",
-    "idf.toolsPathWin": "C:\\Users\\Per\\.espressif",
-    "files.associations": {
-        "iostream": "cpp"
-    }
+    "idf.toolsPathWin": "C:\\Users\\Per\\.espressif"
 }
