@@ -4,35 +4,28 @@
 #include "driver/gpio.h"
 #include "esp_log.h"
 #include <Led_Light.h>
+#include <Button.h>
 
 #define LED_PIN GPIO_NUM_18
 #define BUTTON_PIN GPIO_NUM_27
 
 static const char *TAG = "MAIN";
 
-// Led_Light *Led1;
+Button *button;
 
 /* Allow resolution of undecorated (a.k.a. not mangled), C-style references.  */
-extern "C" {
+extern "C" 
+{
     void app_main(void);
 }
 
-void app_main(void) {
+void app_main(void) 
+{
+    button = new Button(BUTTON_PIN,PT_down);
     
-    esp_rom_gpio_pad_select_gpio(BUTTON_PIN);
-    gpio_set_direction(BUTTON_PIN, GPIO_MODE_INPUT);
-
-    gpio_pullup_dis(BUTTON_PIN);
-    gpio_pulldown_en(BUTTON_PIN);
-
-    for(size_t i = 0; i < 10 * 50; i++)
+    for(;;)
     {
-        vTaskDelay(pdMS_TO_TICKS(20));
+        button->update();
+        vTaskDelay(pdMS_TO_TICKS(10));
     }
-
-    // Led1 = new Led_Light(LED_PIN);
-    // Led1->blink(1000,500);
-    
-    // Remove the pointer once it is of any use.
-    // delete Led1;
 } 
