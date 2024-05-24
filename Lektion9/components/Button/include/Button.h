@@ -15,9 +15,6 @@ class Button
     typedef void (*onButton_cb)(void *);
 
     private:
-        gpio_num_t pin;
-        PullType_e pullType;
-        int status;
         int64_t debounceTimer;
         onButton_cb onPressed = nullptr;
         onButton_cb onRelease = nullptr;
@@ -25,6 +22,10 @@ class Button
         void* onPressed_ptr = nullptr;
         void* onRelease_ptr = nullptr;
 
+    protected:
+        gpio_num_t pin;
+        PullType_e pullType;
+        int status;
     public:
         Button(gpio_num_t pin);
         Button(gpio_num_t pin, PullType_e pullType);
