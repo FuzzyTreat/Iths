@@ -17,12 +17,7 @@ void OnPressed(void* ptr);
 void OnReleased(void* ptr);
 
 /* Allow resolution of undecorated (a.k.a. not mangled), C-style references.  */
-extern "C" 
-{
-    void app_main(void);
-}
-
-void app_main(void) 
+extern "C" void app_main(void) 
 {
     button = new Button(BUTTON_PIN,PT_down);
 

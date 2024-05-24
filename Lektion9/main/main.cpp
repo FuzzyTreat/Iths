@@ -5,10 +5,31 @@
 #include "esp_log.h"
 #include "driver/adc.h"
 #include <driver/ledc.h>
+#include "Servo.h"
 
-#define LED_PIN GPIO_NUM_27
+// 0.5 ms = 0 grader
+// 2.5 ms = 180 grader
+// 50 Hz
+// 20 ms tidsperiod
+// 0.5 / 20 = 0.025 // 2.5%
+// 2.5 / 20 = 0.125 // 12.5%
+
+// duty på 2.5% = 0 grader
+// duty på 12.5% = 180 grader
+
+// 12  bit = 4095
+// 2.5% 4095 ca 102.375
+// 12.5% 4095 ca 511.875
+
+#define SERVO_1_PIN GPIO_NUM_27
+
+#define SERVO_1_CHANNEL LEDC_CHANNEL_0
+
+// uint32_t calculateDuty(double degrees);
 
 static const char *TAG = "MAIN";
+
+Servo *servo1;
 
 /* Allow resolution of undecorated (a.k.a. not mangled), C-style references.  */
 extern "C" 
@@ -18,38 +39,61 @@ extern "C"
 
 void app_main(void) 
 {
-    ledc_timer_config_t timerConfig;
-    timerConfig.clk_cfg = LEDC_AUTO_CLK;
-    timerConfig.duty_resolution = LEDC_TIMER_12_BIT;
-    timerConfig.freq_hz = 100;
-    timerConfig.speed_mode = LEDC_LOW_SPEED_MODE;
-    timerConfig.timer_num = LEDC_TIMER_0;
-    timerConfig.deconfigure = false;
-    ESP_ERROR_CHECK(ledc_timer_config(&timerConfig));
-
-    ledc_channel_config_t channelConfig;
-    channelConfig.channel = LEDC_CHANNEL_0;
-    channelConfig.gpio_num = LED_PIN;
-    channelConfig.intr_type = LEDC_INTR_DISABLE;
-    channelConfig.speed_mode = LEDC_LOW_SPEED_MODE;
-    channelConfig.timer_sel = LEDC_TIMER_0;
-
-    channelConfig.duty = 0;
-    channelConfig.hpoint = 0; // Var finns cykelns hig point
-
-    ESP_ERROR_CHECK(ledc_channel_config(&channelConfig));
+    servo1 = new Servo(SERVO_1_PIN, SERVO_1_CHANNEL);
 
     uint32_t duty = 0;
+    double angle = 0;
+    bool direction = true;
+    
+    // servo1->goToAngle(0);
 
-    for(;;)
-    {
-        ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, 0b111111);
-        duty += 10;
-        duty = duty % 0b111111111111;
+    // for(;;)
+    // {
+    //     // duty = calculateDuty(angle);
 
-        ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0);
+    //     // ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, 0b111111);
+    //     // duty += 10;
+    //     // duty = duty % 0b111111111111;
 
-        vTaskDelay(pdMS_TO_TICKS(100));
-        ESP_LOGI(TAG,"Duty %lu", duty);
-    }
+    //     // ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0);
+
+    //     vTaskDelay(pdMS_TO_TICKS(100));
+    //     std::cout << "Duty %lu" << duty << " Angle %lf" << angle;
+    //     // // ESP_LOGI(TAG,"Duty %lu Angle %lf", duty, angle);
+
+    //     if(direction)
+    //     {
+    //         angle += 0.5;
+
+    //         if(angle > 180)
+    //         {
+    //             direction = false;
+    //         }
+    //     }
+    //     else
+    //     {
+    //         angle -= 0.5;
+
+    //         if(angle <= 0)
+    //         {
+    //             direction = true;
+    //         }
+    //     }
+
+    //     servo1->goToAngle(angle);
+    // }
 } 
+
+uint32_t calculateDuty(double degrees)
+{
+    if(degrees >= 180)
+    {
+        return DEGREE_180_DUTY;
+    }
+    else if(degrees <= 0)
+    {
+        return DEGREE_0_DUTY;
+    }
+
+    return (degrees * (((double)DEGREE_180_DUTY - (double)DEGREE_0_DUTY) / (double)180.0)) + (double)DEGREE_0_DUTY;
+}

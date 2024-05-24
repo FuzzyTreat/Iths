@@ -40,13 +40,14 @@ Button::~Button()
 }
 
 // Läs av pinnen och se om den är hög.
-// Se till att pinnen inte har ändrats inom ett kort tidsintervall  // debounce check
+// Se till att pinnen inte har ändrats inom ett kort tidsintervall.
+// Intervallet mellan två knapptryck måste vara mer än tex 50 millisekunder  // debounce check
 void Button::Update()
 {
     int newStatus;
     
-    // 50 * 1000 converts seconds to milliseconds.
-    if(esp_timer_get_time() - debounceTimer > 50 * 1000)
+    // 50 * 1000 converts seconds to microsekunder.
+    if(esp_timer_get_time() - debounceTimer < 50 * 1000)
     {
         return;
     }
