@@ -63,8 +63,7 @@ void Button::Update()
         {
             onRelease(onRelease_ptr);
         }
-
-        if(onPressed && status ==1)
+        else if(onPressed && status == 1)
         {
             onPressed(onPressed_ptr);
         }
