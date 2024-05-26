@@ -27,11 +27,8 @@ class Servo
     private:
         gpio_num_t pin;
         ledc_channel_t channel;
-        // uint32_t duty = 0;
-        // double angle = 0;
         bool direction = false;
         int32_t calculateDuty(double degrees);
-        
 
     public:
         Servo(gpio_num_t pin, ledc_channel_t);
@@ -39,6 +36,5 @@ class Servo
         void Update(double angle);
         double CalculateAngle(double angle);
 };
-
 
 #endif
