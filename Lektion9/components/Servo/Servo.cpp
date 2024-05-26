@@ -1,9 +1,5 @@
 #include "Servo.h"
 
-// #define MAX_DUTY 0b111111111111
-// #define DEGREE_0_DUTY 102
-// #define DEGREE_180_DUTY 512
-
 static const char *TAG = "Servo";
 
 Servo::Servo(gpio_num_t pin, ledc_channel_t channel):pin(pin), channel(channel)
@@ -27,31 +23,58 @@ Servo::Servo(gpio_num_t pin, ledc_channel_t channel):pin(pin), channel(channel)
     channelConfig.timer_sel = LEDC_TIMER_0;
 
     channelConfig.duty = 0;
-    channelConfig.hpoint = 0; // Var finns cykelns hig point
+    channelConfig.hpoint = 0; // Var finns cykelns high point, 0 => Hög läge i början av cykel
 
     ESP_ERROR_CHECK(ledc_channel_config(&channelConfig));
+
+
 };
 
 Servo::~Servo(){};
 
-void Servo::goToAngle(double degrees)
+void Servo::Update(double angle)
 {
-    uint32_t duty = 0;
+        ledc_set_duty(LEDC_LOW_SPEED_MODE, channel, calculateDuty(angle));
+        // duty += 10;
+        // duty = duty % 0b111111111111;
+        ledc_update_duty(LEDC_LOW_SPEED_MODE, channel);
+}
 
+int32_t Servo::calculateDuty(double degrees)
+{
     if(degrees >= 180)
     {
-        duty = DEGREE_180_DUTY;
+        return DEGREE_180_DUTY;
     }
     else if(degrees <= 0)
     {
-        duty = DEGREE_0_DUTY;
+        return DEGREE_0_DUTY;
     }
 
-    duty = (degrees * (((double)DEGREE_180_DUTY - (double)DEGREE_0_DUTY) / (double)180.0)) + (double)DEGREE_0_DUTY;
+    return (degrees * (((double)DEGREE_180_DUTY - (double)DEGREE_0_DUTY) / (double)180.0)) + (double)DEGREE_0_DUTY;
 
-    ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, 0b111111);
-    duty += 10;
-    duty = duty % 0b111111111111;
+}
 
-    ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0);
+double Servo::CalculateAngle(double angle)
+{
+    if(direction)
+    {
+        angle += 0.5;
+
+        if(angle >= 180)
+        {
+            direction = false;
+        }
+    }
+    else
+    {
+        angle -= 0.5;
+
+        if(angle <= 0)
+        {
+            direction = true;
+        }
+    }
+
+    return angle;
 }
