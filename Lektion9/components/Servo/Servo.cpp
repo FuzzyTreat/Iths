@@ -30,12 +30,17 @@ Servo::Servo(gpio_num_t pin, ledc_channel_t channel):pin(pin), channel(channel)
 
 Servo::~Servo(){};
 
+/// @brief Updates the selected ledc_channel with the calculated duty value based on the current angle.
+/// @param angle 
 void Servo::Update(double angle)
 {
     ledc_set_duty(LEDC_LOW_SPEED_MODE, channel, calculateDuty(angle));
     ledc_update_duty(LEDC_LOW_SPEED_MODE, channel);
 }
 
+/// @brief Makes sure the angle stays with valid boundry values, ie 0 degrees and 180 degrees
+/// @param angle 
+/// @return returns 0 if <= 0 or 180 if >= 180 or a calulated value somewhere between the boundries
 int32_t Servo::calculateDuty(double angle)
 {
     if(angle >= 180)

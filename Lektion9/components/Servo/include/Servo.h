@@ -8,6 +8,8 @@
 #define DEGREE_0_DUTY 102
 #define DEGREE_180_DUTY 512
 
+// Calulations for the above definitions
+
 // 0.5 ms = 0 grader
 // 2.5 ms = 180 grader
 // 50 Hz
