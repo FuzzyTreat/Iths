@@ -35,8 +35,6 @@ Servo::~Servo(){};
 void Servo::Update(double angle)
 {
         ledc_set_duty(LEDC_LOW_SPEED_MODE, channel, calculateDuty(angle));
-        // duty += 10;
-        // duty = duty % 0b111111111111;
         ledc_update_duty(LEDC_LOW_SPEED_MODE, channel);
 }
 
@@ -55,6 +53,9 @@ int32_t Servo::calculateDuty(double degrees)
 
 }
 
+/// @brief Calulates the new angle and changes direction if necessary at 0 deg and 180 deg
+/// @param angle 
+/// @return the updated value of angle
 double Servo::CalculateAngle(double angle)
 {
     if(direction)
