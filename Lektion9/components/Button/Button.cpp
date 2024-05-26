@@ -16,20 +16,20 @@ Button::Button(gpio_num_t pin, PullType_e pullType):pin(pin), pullType(pullType)
 
     switch (pullType)
     {
-    case PT_up:
-        gpio_pullup_en(pin);
-        gpio_pulldown_dis(pin);
-        break;
+        case PT_up:
+            gpio_pullup_en(pin);
+            gpio_pulldown_dis(pin);
+            break;
 
-    case PT_down:
-        gpio_pullup_dis(pin);
-        gpio_pulldown_en(pin);
-        break;
+        case PT_down:
+            gpio_pullup_dis(pin);
+            gpio_pulldown_en(pin);
+            break;
 
-    default:
-        gpio_pullup_dis(pin);
-        gpio_pulldown_dis(pin);
-        break;
+        default:
+            gpio_pullup_dis(pin);
+            gpio_pulldown_dis(pin);
+            break;
     }
 
     debounceTimer = esp_timer_get_time();
