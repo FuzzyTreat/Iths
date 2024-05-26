@@ -18,6 +18,7 @@ Servo *servo1;
 extern "C" void app_main(void) 
 {
     servo1 = new Servo(SERVO_1_PIN, SERVO_1_CHANNEL);
+
     double angle = 0;
     
     servo1->Update(0);
@@ -27,7 +28,8 @@ extern "C" void app_main(void)
         servo1->Update(angle);
 
         vTaskDelay(pdMS_TO_TICKS(10));
-        ESP_LOGI(TAG,"Angle %lf", angle);
+
+        printf("\rAngle: %lf", angle);
 
         angle = servo1->CalculateAngle(angle);
     }
