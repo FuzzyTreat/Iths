@@ -26,30 +26,28 @@ Servo::Servo(gpio_num_t pin, ledc_channel_t channel):pin(pin), channel(channel)
     channelConfig.hpoint = 0; // Var finns cykelns high point, 0 => Hög läge i början av cykel
 
     ESP_ERROR_CHECK(ledc_channel_config(&channelConfig));
-
-
 };
 
 Servo::~Servo(){};
 
 void Servo::Update(double angle)
 {
-        ledc_set_duty(LEDC_LOW_SPEED_MODE, channel, calculateDuty(angle));
-        ledc_update_duty(LEDC_LOW_SPEED_MODE, channel);
+    ledc_set_duty(LEDC_LOW_SPEED_MODE, channel, calculateDuty(angle));
+    ledc_update_duty(LEDC_LOW_SPEED_MODE, channel);
 }
 
-int32_t Servo::calculateDuty(double degrees)
+int32_t Servo::calculateDuty(double angle)
 {
-    if(degrees >= 180)
+    if(angle >= 180)
     {
         return DEGREE_180_DUTY;
     }
-    else if(degrees <= 0)
+    else if(angle <= 0)
     {
         return DEGREE_0_DUTY;
     }
 
-    return (degrees * (((double)DEGREE_180_DUTY - (double)DEGREE_0_DUTY) / (double)180.0)) + (double)DEGREE_0_DUTY;
+    return (angle * (((double)DEGREE_180_DUTY - (double)DEGREE_0_DUTY) / (double)180.0)) + (double)DEGREE_0_DUTY;
 
 }
 
