@@ -21,7 +21,7 @@ extern "C" void app_main(void)
 
     double angle = 0;
     
-    servo1->Update(0);
+    servo1->Update(angle);
 
     for(;;)
     {
