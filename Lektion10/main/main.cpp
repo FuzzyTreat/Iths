@@ -17,7 +17,7 @@ extern "C" void app_main(void)
 
     // assumes the watchdog in config has been turned off
     /// define and start watchdog
-    esp_task_wdt_t watchDogConfig;
+    esp_task_wdt_config_t watchDogConfig;
 
     watchDogConfig.timeout_ms = 5000;
     watchDogConfig.trigger_panic = false; // true -> reboot board
