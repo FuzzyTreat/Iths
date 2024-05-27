@@ -33,4 +33,6 @@ extern "C" void app_main(void)
 
         angle = servo1->CalculateAngle(angle);
     }
+
+    delete servo1;
 } 
