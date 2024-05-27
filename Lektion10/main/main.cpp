@@ -20,8 +20,6 @@ extern "C" void app_main(void)
     servo1 = new Servo(SERVO_1_PIN, SERVO_1_CHANNEL);
 
     double angle = 0;
-    
-    servo1->Update(angle);
 
     for(;;)
     {
