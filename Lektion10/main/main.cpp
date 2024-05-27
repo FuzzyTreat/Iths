@@ -32,7 +32,7 @@ extern "C" void app_main(void)
     esp_task_wdt_init(&watchDogConfig);
     esp_task_wdt_add(NULL); // NULL is the context where the watchdog is called from, in this case main()
 
-    interruptConfig.pin_bit_mask = 1ULL << INTERRUPT_PIN;
+    interruptConfig.pin_bit_mask = 1ULL << INTERRUPT_PIN; // 1 usigned long long bitshift INTERRUPT_PIN
     interruptConfig.mode = GPIO_MODE_INPUT;
     interruptConfig.intr_type = GPIO_INTR_POSEDGE; // when is the interrupt triggered, high or low on the pin
     interruptConfig.pull_down_en = GPIO_PULLDOWN_DISABLE;
@@ -56,6 +56,8 @@ extern "C" void app_main(void)
     }
 } 
 
+/// @brief User defined interrupt handler method
+/// @param counter 
 void InterruptHandler(void *counter)
 {
     gpio_isr_handler_remove(INTERRUPT_PIN);
@@ -63,7 +65,7 @@ void InterruptHandler(void *counter)
 }
 
 
-/// @brief User defined Interrupt handler method
+/// @brief User defined watchdog handler method
 /// @param  
 extern "C" void esp_task_wdt_isr_user_handler(void)
 {
