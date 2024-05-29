@@ -65,7 +65,7 @@ void InterruptHandler(void *counter)
 }
 
 
-/// @brief User defined watchdog handler method
+/// @brief User defined watchdog handler method, handles the interrupt panic 
 /// @param  
 extern "C" void esp_task_wdt_isr_user_handler(void)
 {
