@@ -40,8 +40,6 @@ extern "C" void app_main(void)
 
     gpio_config(&interruptConfig);
 
-    // gpio_isr_register(void (*fn)(void*), void *arg, int intr_alloc_flags, gpio_isr_handle_t *handle)
-
     gpio_install_isr_service(0); // Installs and register the GPIO handler service
     gpio_isr_handler_add(INTERRUPT_PIN, InterruptHandler, (void *)&interruptCounter);
 
