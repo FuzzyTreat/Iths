@@ -5,69 +5,59 @@
 #include "esp_log.h"
 #include <esp_timer.h>
 #include <esp_task_wdt.h>
+#include <driver/dedic_gpio.h>
 
-#define INTERRUPT_PIN GPIO_NUM_27
+#define 
+
+
+#define NUM_ROWS  4
+#define NUM_COLS  4
+
+const int rowPins[NUM_ROWS] = {14, 27, 26, 25}; // GPIO_NUM_14, GPIO_NUM_27, GPIO_NUM_26, GPIO_NUM_25
+const int colPins[NUM_COLS] = {33, 32, 18, 19}; // GPIO_NUM_33, GPIO_NUM_32, GPIO_NUM_18, GPIO_NUM_19
 
 static const char *TAG = "MAIN";
-
-int interruptCounter = 0;
-void InterruptHandler(void *);
 
 /* Allow resolution of undecorated (a.k.a. not mangled), C-style references.  */
 extern "C" void app_main(void) 
 {
-    int counter = 0;
-    int64_t timer = esp_timer_get_time();
-    int64_t currentTime = 0;
+    char keyMap[NUM_ROWS][NUM_COLS] = {
+        {'1','2','3', 'A'},
+        {'4','5','6', 'B'},
+        {'7','8','9', 'C'},
+        {'*','0','#', 'D'}
+    };
 
-    // assumes the watchdog in config has been turned off
-    /// define and start watchdog
-    esp_task_wdt_config_t watchDogConfig;
-    gpio_config_t interruptConfig;
+    // Configure the pin bundle for the matrix rows, set pins to high
+    gpio_config_t rowConfig = {
+        .mode = GPIO_MODE_OUTPUT,
+        .pull_up_en = GPIO_PULLUP_ENABLE,
+    };
 
-    watchDogConfig.timeout_ms = 5000;
-    watchDogConfig.trigger_panic = false; // true -> reboot board
-    watchDogConfig.idle_core_mask = 0b10; // watchdog Idle0 
-    
-    esp_task_wdt_init(&watchDogConfig);
-    esp_task_wdt_add(NULL); // NULL is the context where the watchdog is called from, in this case main()
+    for(int32_t i = 0; i < sizeof(rowPins) / sizeof(rowPins[0]); i++)
+    {
+        rowConfig.pin_bit_mask = 1ULL << rowPins[i];
+        gpio_config(&rowConfig);
+    }
 
-    interruptConfig.pin_bit_mask = 1ULL << INTERRUPT_PIN; // 1 usigned long long bitshift INTERRUPT_PIN
-    interruptConfig.mode = GPIO_MODE_INPUT;
-    interruptConfig.intr_type = GPIO_INTR_POSEDGE; // when is the interrupt triggered, high or low on the pin
-    interruptConfig.pull_down_en = GPIO_PULLDOWN_DISABLE;
-    interruptConfig.pull_up_en = GPIO_PULLUP_DISABLE;
+    // create the row pin bundle
+    dedic_gpio_bundle_handle_t rowBundle = NULL;
+    dedic_gpio_bundle_config_t rowBundleConfig = {
+        .gpio_array = rowPins,
+        .array_size = sizeof(rowPins) / sizeof(rowPins[0]),
+        .flags = {
+            .out_en = 1,
+        }
+    };
 
-    gpio_config(&interruptConfig);
+    ESP_ERROR_CHECK(dedic_gpio_new_bundle(&rowBundleConfig, &rowBundle));
 
-    gpio_install_isr_service(0); // Installs and register the GPIO handler service
-    gpio_isr_handler_add(INTERRUPT_PIN, InterruptHandler, (void *)&interruptCounter);
+    // Disable interrupt
+    // dedic_gpio_bundle_set_interrupt_and_callback(mkbd->row_bundle, (1 << config->nr_row_gpios) - 1,
+    //         DEDIC_GPIO_INTR_NONE, NULL, NULL);
 
     for(;;)
     {
-        currentTime = esp_timer_get_time();
-
-        if((currentTime - timer)  > 4500 * 1000)
-        {
-            timer = currentTime;
-            esp_task_wdt_reset(); // Wake the dog, pet it to make it aware
-            ESP_LOGI(TAG,"Watchdog reset, interrupt count %d", counter);
-        }
+        // ESP_LOGI(TAG,"Nothing to see here yet!");
     }
 } 
-
-/// @brief User defined interrupt handler method
-/// @param counter 
-void InterruptHandler(void *counter)
-{
-    gpio_isr_handler_remove(INTERRUPT_PIN);
-    *((int *)counter) = *((int *)counter) + 1;
-}
-
-
-/// @brief User defined watchdog handler method, handles the interrupt panic 
-/// @param  
-extern "C" void esp_task_wdt_isr_user_handler(void)
-{
-
-}
