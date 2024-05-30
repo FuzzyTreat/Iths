@@ -107,12 +107,19 @@ static esp_err_t lcd_send_data(uint8_t data) {
 }
  
 static void lcd_init(void) {
+    // The `lcd_send_cmd(0x30);` command is used to initialize the LCD module. 
+    // In 4-bit mode (which is commonly used for interfacing with LCDs), this command sets the 
+    // module to expect 8-bit communication. It is typically sent three times to ensure proper 
+    // initialization and to switch the LCD from its power-on state to a known operational mode. 
+    // This sequence is a common initialization procedure specified by most HD44780-compatible 
+    // LCD controllers.
+
     vTaskDelay(pdMS_TO_TICKS(50)); // wait for >40ms
     lcd_send_cmd(0x30);
-    // vTaskDelay(pdMS_TO_TICKS(5));  // wait for >4.1ms
-    // lcd_send_cmd(0x30);
-    // vTaskDelay(pdMS_TO_TICKS(1));  // wait for >100us
-    // lcd_send_cmd(0x30);
+    vTaskDelay(pdMS_TO_TICKS(5));  // wait for >4.1ms
+    lcd_send_cmd(0x30);
+    vTaskDelay(pdMS_TO_TICKS(1));  // wait for >100us
+    lcd_send_cmd(0x30);
     vTaskDelay(pdMS_TO_TICKS(10));
     lcd_send_cmd(0x20);  // 4-bit mode
     vTaskDelay(pdMS_TO_TICKS(10));
