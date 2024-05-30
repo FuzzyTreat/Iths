@@ -49,13 +49,13 @@ static void lcd_print(const char *str);
 /// @brief Main() - application entry point
 /// @param  
 void app_main(void) {
-    ESP_ERROR_CHECK(i2c_master_init());
-    lcd_init();
-    lcd_print("Hello, World!");
+    // ESP_ERROR_CHECK(i2c_master_init());
+    // lcd_init();
+    // lcd_print("Hello, World!");
  
-    while (1) {
-        vTaskDelay(pdMS_TO_TICKS(1000));
-    }
+    // while (1) {
+    //     vTaskDelay(pdMS_TO_TICKS(1000));
+    // }
 }
  
 static esp_err_t i2c_master_init(void) {
