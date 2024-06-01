@@ -82,12 +82,11 @@ static void gpio_isr_handler(void* arg)
     xQueueSendFromISR(gpio_evt_queue, &gpio_num, NULL);
 }
 
-static void gpio_task_example(void* arg)
+static void gpio_task(void* arg)
 {
     uint32_t io_num;
     gpio_num_t row_num;
     gpio_num_t col_num;
-
 
     for (;;) {
         if (xQueueReceive(gpio_evt_queue, &io_num, portMAX_DELAY)) 
@@ -111,10 +110,10 @@ PinArray_s *pinArray;
 
 extern "C" void app_main(void)
 {
-    pinArray = new PinArray_s();
-    pinArray->pins = row_pins;
-    pinArray->numPins = sizeof(row_pins) / sizeof(row_pins[0]);
-    pinArray->activePin = GPIO_NUM_0;
+    // pinArray = new PinArray_s();
+    // pinArray->pins = row_pins;
+    // pinArray->numPins = sizeof(row_pins) / sizeof(row_pins[0]);
+    // pinArray->activePin = GPIO_NUM_0;
 
     // esp_rom_gpio_pad_select_gpio(PIN6);
     // gpio_pullup_dis(PIN6);
@@ -151,13 +150,14 @@ extern "C" void app_main(void)
 
     //create a queue to handle gpio event from isr
     gpio_evt_queue = xQueueCreate(10, sizeof(uint32_t));
-    //start gpio task
-    xTaskCreate(gpio_task_example, "gpio_task_example", 2048, NULL, 10, NULL);
+
+    //start gpio task, runs a loop which will handle the Queue events when they happen, a way to get out of ISR with data.
+    xTaskCreate(gpio_task, "gpio_task", 2048, NULL, 10, NULL);
 
     //install gpio isr service
     gpio_install_isr_service(ESP_INTR_FLAG_DEFAULT);
     //hook isr handler for specific gpio pin
-    gpio_isr_handler_add(PIN6, gpio_isr_handler, (void*) PIN6);
+    gpio_isr_handler_add(PIN6, gpio_isr_handler, (void*) PIN6); // Tells you which column the trigger was
     //hook isr handler for specific gpio pin
     gpio_isr_handler_add(PIN5, gpio_isr_handler, (void*) PIN5);
 
@@ -165,6 +165,8 @@ extern "C" void app_main(void)
     gpio_isr_handler_remove(PIN6);
     //hook isr handler for specific gpio pin again
     gpio_isr_handler_add(PIN6, gpio_isr_handler, (void*) PIN6);
+
+    printf("Minimum free heap size: %"PRIu32" bytes\n", esp_get_minimum_free_heap_size());
 
     // gpio_install_isr_service(ESP_INTR_FLAG_DEFAULT); // Installs and register the GPIO handler service
     // gpio_isr_handler_add(PIN4, InterruptHandler, (void *)pinArray); // <- Should send a struct with pin info so we can parse the rows.
