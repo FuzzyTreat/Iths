@@ -1,181 +1,153 @@
+#include <stdio.h>
 #include "freertos/FreeRTOS.h"
-#include "esp_wifi.h"
+#include "driver/gpio.h"
 #include "esp_system.h"
 #include "esp_event.h"
 #include "esp_event_loop.h"
-#include "nvs_flash.h"
-#include "driver/gpio.h"
+//#include "nvs_flash.h"
 
-esp_err_t event_handler(void *ctx, system_event_t *event)
+
+// Uppgift
+// Implementera en kod som använder sig av GPIO för att ställa och läsa av värden från Keypad matrix.
+// Koden ska skriva ut i konsolen med hjälp av ESP_LOGI vilken knapp som har trycks ner.
+// "A" eller "1" till exempel.
+
+// Pinnarna ska vara definerade enligt bilden nedan, där pinne 1 är till höger i bilden och 8 till vänster.
+// Ni ska också förklara om ni har använt pull up/ pull down extern eller i mjukvara på respektive pinne. Skriv den informationen i en fil som heter README.md i top nivå på erat projekt.
+// Zippa hela projektet och ladda upp.
+// Mattias kommer ta bort sdkconfig så se till att lägga alla inställningar som krävs i sdkconfig.defaults
+
+// Pin placement on the keypad connector
+
+// 8 ------- 1
+
+// Keypad grid layout
+
+// 8   X X X X
+// 7   X X X X
+// 6   X X X X
+// 5   X X X X
+
+//     4 3 2 1
+
+
+// Högst upp ska 8 PIN definitioner finnas enligt följande:
+
+#define PIN1 GPIO_NUM_27    // Row 1
+#define PIN2 GPIO_NUM_26    // Row 2
+#define PIN3 GPIO_NUM_25    // Row 3
+#define PIN4 GPIO_NUM_19    // Row 4 
+#define PIN5 GPIO_NUM_23    // Col 5
+#define PIN6 GPIO_NUM_22    // Col 6
+#define PIN7 GPIO_NUM_21    // Col 7
+#define PIN8 GPIO_NUM_18    // Col 8
+
+// Keypad Pins
+#define NUM_ROWS 4
+#define NUM_COLS 4
+
+static gpio_num_t row_pins[] = {PIN1, PIN2, PIN3, PIN4};
+static gpio_num_t col_pins[] = {PIN5, PIN6, PIN7, PIN8};
+
+ // Struct with the neccessary settings for the keypad.
+typedef struct keypad_settings {
+        uint32_t      num_row_layout;   // Number of rows of the layout
+        uint32_t      num_col_layout;   // Number of columns of the layout
+        char32_t      layout[4][4];     // Keypad layout in 2 dimensions
+        uint32_t      num_gpio_out;     // Number of output GPIOs
+        uint32_t      num_gpio_in;      // Number of input GPIOs
+        gpio_num_t    *gpio_output;     // Pointer for the output GPIOs array
+        gpio_num_t    *gpio_input;      // Pointer for the input GPIOs array
+        uint32_t      frequency;        // Scan frequency in Hz
+        uint32_t      last_output;      // Last order in output dimension
+        uint32_t      last_input;       // Last order in input dimension
+        QueueHandle_t queue;            // Queue to send this structure?
+} keypad_settings_t;
+
+char32_t keyMap[NUM_ROWS][NUM_COLS] = {
+    {'1','2','3', 'A'},
+    {'4','5','6', 'B'},
+    {'7','8','9', 'C'},
+    {'*','0','#', 'D'}
+};
+
+keypad_settings_t *keypad;
+
+void setGpioConfig();
+void setupGpioDirection();
+uint64_t getPinMask(const gpio_num_t *pins_array, const uint32_t num_pins);
+
+extern "C" void app_main(void)
 {
-    return ESP_OK;
+    keypad = new keypad_settings_t();
+
+    keypad->gpio_input = col_pins;
+    keypad->gpio_output = row_pins;
+    keypad->num_col_layout = NUM_COLS;
+    keypad->num_row_layout = NUM_ROWS;
+    keypad->num_gpio_in = NUM_COLS;
+    keypad->num_gpio_out = NUM_ROWS;
+    // TODO: Fill in missing values
+
+    setGpioConfig(keypad);
 }
 
-void leveltask(void *pvParameter)
-{   
-    while(1){
-    gpio_set_level(16,1); //c1
-    gpio_set_level(17,1); //c2
-    gpio_set_level(5,1); //c3
-    gpio_set_level(18,1); //c4   // default , column check stop 
-    gpio_set_level(27,0); //r1
-    gpio_set_level(26,0); //r2
-    gpio_set_level(25,0); //r3
-    gpio_set_level(33,0); //r4
-    printf("checking");
-    vTaskDelay(10 / portTICK_PERIOD_MS);
-    }
+void setGpioConfig(keypad_settings_t *keypad)
+{
+    gpio_config_t io_conf;
+
+    //disable interrupt
+    io_conf.intr_type = GPIO_INTR_DISABLE;
+    //set as output mode
+    io_conf.mode = GPIO_MODE_OUTPUT;
+    //bit mask of the pins that you want to set, ie output pins
+    io_conf.pin_bit_mask = getPinMask(keypad->gpio_output, keypad->num_gpio_out);
+    //disable pull-down mode
+    io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
+    //disable pull-up mode
+    io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
+    //configure GPIO with the given settings
+    gpio_config(&io_conf);
+
+    //interrupt of rising edge
+    io_conf.intr_type = GPIO_INTR_POSEDGE;
+    //set as input mode
+    io_conf.mode = GPIO_MODE_INPUT;
+    //bit mask of the pins, use the input pins here
+    io_conf.pin_bit_mask = getPinMask(keypad->gpio_input, keypad->num_gpio_in);
+    //disable pull-down mode
+    io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
+    //enable pull-up mode
+    io_conf.pull_up_en = GPIO_PULLUP_DISABLE; // Bad internal pull-up
+    
+    //configure GPIO with the given settings
+    gpio_config(&io_conf);
+
+    //create a queue to handle gpio event from isr
+    // keypad->queue = xQueueCreate(10, sizeof(keypad_settings_t));
+    //start gpio task
+    // xTaskCreate(keypad_sequency_task, "keypad_sequency_task", 2048, (void *) keypad, 10, NULL);
 }
 
-void app_main(void)
+/// @brief Creates a bitmask based on the array of pins in *pins_array
+/// @param pins_array 
+/// @param num_pins 
+/// @return The composite bitmask as a uint64_t value
+uint64_t getPinMask(const gpio_num_t *pins_array, const uint32_t num_pins)
 {
-    gpio_pad_select_gpio(27); //r1
-    gpio_set_direction(27, GPIO_MODE_INPUT_OUTPUT);    
-    gpio_pad_select_gpio(26); //r2
-    gpio_set_direction(26, GPIO_MODE_INPUT_OUTPUT);    
-    gpio_pad_select_gpio(25); //r3
-    gpio_set_direction(25, GPIO_MODE_INPUT_OUTPUT);    
-    gpio_pad_select_gpio(33); //r4
-    gpio_set_direction(33, GPIO_MODE_INPUT_OUTPUT);    
-    gpio_pad_select_gpio(17); //c1
-    gpio_set_direction(17, GPIO_MODE_INPUT_OUTPUT);    
-    gpio_pad_select_gpio(16); //c2
-    gpio_set_direction(16, GPIO_MODE_INPUT_OUTPUT);    
-    gpio_pad_select_gpio(5); //c3
-    gpio_set_direction(5, GPIO_MODE_INPUT_OUTPUT);    
-    gpio_pad_select_gpio(18); //c4
-    gpio_set_direction(18, GPIO_MODE_INPUT_OUTPUT);
-    xTaskCreate(&leveltask, "leveltask", 2048, NULL, 5, NULL);    
-    while(1)
-    {
-    if(gpio_get_level(16) == 0) //column 1 //set level iruka ila store pananuma nu also check loop since printf prints la
-    {
-      gpio_set_level(27,1); //r1
-      {
-      if(gpio_get_level(27) && gpio_get_level(16) == 1){printf("button 1 pressed!");}
-      else if(gpio_get_level(27) && gpio_get_level(17) == 1){printf("button 2 pressed!");}
-      else if(gpio_get_level(27) && gpio_get_level(5) == 1){printf("button 3 pressed!");}
-      else if(gpio_get_level(27) && gpio_get_level(18) == 1){printf("button A pressed!");}
-      }
-      gpio_set_level(26,1); //r2
-      {
-      if(gpio_get_level(26) && gpio_get_level(16) == 1){printf("button 4 pressed!");}
-      else if(gpio_get_level(26) && gpio_get_level(17) == 1){printf("button 5 pressed!");}
-      else if(gpio_get_level(26) && gpio_get_level(5) == 1){printf("button 6 pressed!");}
-      else if(gpio_get_level(26) && gpio_get_level(18) == 1){printf("button B pressed!");}
-      }
-      gpio_set_level(25,1); //r3
-      {
-      if(gpio_get_level(25) && gpio_get_level(16) == 1){printf("button 7 pressed!");}
-      else if(gpio_get_level(25) && gpio_get_level(17) == 1){printf("button 8 pressed!");}
-      else if(gpio_get_level(25) && gpio_get_level(5) == 1){printf("button 9 pressed!");}
-      else if(gpio_get_level(25) && gpio_get_level(18) == 1){printf("button C pressed!");}
-      }
-      gpio_set_level(33,1); //r4
-      {
-      if(gpio_get_level(33) && gpio_get_level(16) == 1){printf("button * pressed!");}
-      else if(gpio_get_level(33) && gpio_get_level(17) == 1){printf("button 0 pressed!");}
-      else if(gpio_get_level(33) && gpio_get_level(5) == 1){printf("button # pressed!");}
-      else if(gpio_get_level(33) && gpio_get_level(18) == 1){printf("button D pressed!");}
-      }
-      gpio_set_level(27,0); gpio_set_level(26,0); gpio_set_level(25,0); gpio_set_level(33,0);
-    }
-    if(gpio_get_level(17) == 0) //column 2
-    {  
-      gpio_set_level(27,1); //r1
-      {
-      if(gpio_get_level(27) && gpio_get_level(16) == 1){printf("button 1 pressed!");}
-      else if(gpio_get_level(27) && gpio_get_level(17) == 1){printf("button 2 pressed!");}
-      else if(gpio_get_level(27) && gpio_get_level(5) == 1){printf("button 3 pressed!");}
-      else if(gpio_get_level(27) && gpio_get_level(18) == 1){printf("button A pressed!");}
-      }
-      gpio_set_level(26,1); //r2
-      {
-      if(gpio_get_level(26) && gpio_get_level(16) == 1){printf("button 4 pressed!");}
-      else if(gpio_get_level(26) && gpio_get_level(17) == 1){printf("button 5 pressed!");}
-      else if(gpio_get_level(26) && gpio_get_level(5) == 1){printf("button 6 pressed!");}
-      else if(gpio_get_level(26) && gpio_get_level(18) == 1){printf("button B pressed!");}
-      }
-      gpio_set_level(25,1); //r3
-      {
-      if(gpio_get_level(25) && gpio_get_level(16) == 1){printf("button 7 pressed!");}
-      else if(gpio_get_level(25) && gpio_get_level(17) == 1){printf("button 8 pressed!");}
-      else if(gpio_get_level(25) && gpio_get_level(5) == 1){printf("button 9 pressed!");}
-      else if(gpio_get_level(25) && gpio_get_level(18) == 1){printf("button C pressed!");}
-      }
-      gpio_set_level(33,1); //r4
-      {
-      if(gpio_get_level(33) && gpio_get_level(16) == 1){printf("button * pressed!");}
-      else if(gpio_get_level(33) && gpio_get_level(17) == 1){printf("button 0 pressed!");}
-      else if(gpio_get_level(33) && gpio_get_level(5) == 1){printf("button # pressed!");}
-      else if(gpio_get_level(33) && gpio_get_level(18) == 1){printf("button D pressed!");}
-      }
-      gpio_set_level(27,0); gpio_set_level(26,0); gpio_set_level(25,0); gpio_set_level(33,0);
-    }
-    if(gpio_get_level(5) == 0) // column 3
-    {
-      gpio_set_level(27,1); //r1
-      {
-      if(gpio_get_level(27) && gpio_get_level(16) == 1){printf("button 1 pressed!");}
-      else if(gpio_get_level(27) && gpio_get_level(17) == 1){printf("button 2 pressed!");}
-      else if(gpio_get_level(27) && gpio_get_level(5) == 1){printf("button 3 pressed!");}
-      else if(gpio_get_level(27) && gpio_get_level(18) == 1){printf("button A pressed!");}
-      }
-      gpio_set_level(26,1); //r2
-      {
-      if(gpio_get_level(26) && gpio_get_level(16) == 1){printf("button 4 pressed!");}
-      else if(gpio_get_level(26) && gpio_get_level(17) == 1){printf("button 5 pressed!");}
-      else if(gpio_get_level(26) && gpio_get_level(5) == 1){printf("button 6 pressed!");}
-      else if(gpio_get_level(26) && gpio_get_level(18) == 1){printf("button B pressed!");}
-      }
-      gpio_set_level(25,1); //r3
-      {
-      if(gpio_get_level(25) && gpio_get_level(16) == 1){printf("button 7 pressed!");}
-      else if(gpio_get_level(25) && gpio_get_level(17) == 1){printf("button 8 pressed!");}
-      else if(gpio_get_level(25) && gpio_get_level(5) == 1){printf("button 9 pressed!");}
-      else if(gpio_get_level(25) && gpio_get_level(18) == 1){printf("button C pressed!");}
-      }
-      gpio_set_level(33,1); //r4
-      {
-      if(gpio_get_level(33) && gpio_get_level(16) == 1){printf("button * pressed!");}
-      else if(gpio_get_level(33) && gpio_get_level(17) == 1){printf("button 0 pressed!");}
-      else if(gpio_get_level(33) && gpio_get_level(5) == 1){printf("button # pressed!");}
-      else if(gpio_get_level(33) && gpio_get_level(18) == 1){printf("button D pressed!");}
-      }
-      gpio_set_level(27,0); gpio_set_level(26,0); gpio_set_level(25,0); gpio_set_level(33,0);
+    uint32_t buf32_0 = 0;
+    uint32_t buf32_1 = 0;
+    uint64_t result = 0;
 
+    for (uint32_t i = 0; i < num_pins; i++) 
+    {
+        if (pins_array[i] >= 32)
+            buf32_1 |= 1 << (pins_array[i] - 32);
+        else
+            buf32_0 |= 1 << pins_array[i];
     }
-    if(gpio_get_level(18) == 0)  //column 4
-    {  
-      gpio_set_level(27,1); //r1
-      {
-      if(gpio_get_level(27) && gpio_get_level(16) == 1){printf("button 1 pressed!");}
-      else if(gpio_get_level(27) && gpio_get_level(17) == 1){printf("button 2 pressed!");}
-      else if(gpio_get_level(27) && gpio_get_level(5) == 1){printf("button 3 pressed!");}
-      else if(gpio_get_level(27) && gpio_get_level(18) == 1){printf("button A pressed!");}
-      }
-      gpio_set_level(26,1); //r2
-      {
-      if(gpio_get_level(26) && gpio_get_level(16) == 1){printf("button 4 pressed!");}
-      else if(gpio_get_level(26) && gpio_get_level(17) == 1){printf("button 5 pressed!");}
-      else if(gpio_get_level(26) && gpio_get_level(5) == 1){printf("button 6 pressed!");}
-      else if(gpio_get_level(26) && gpio_get_level(18) == 1){printf("button B pressed!");}
-      }
-      gpio_set_level(25,1); //r3
-      {
-      if(gpio_get_level(25) && gpio_get_level(16) == 1){printf("button 7 pressed!");}
-      else if(gpio_get_level(25) && gpio_get_level(17) == 1){printf("button 8 pressed!");}
-      else if(gpio_get_level(25) && gpio_get_level(5) == 1){printf("button 9 pressed!");}
-      else if(gpio_get_level(25) && gpio_get_level(18) == 1){printf("button C pressed!");}
-      }
-      gpio_set_level(33,1); //r4
-      {
-      if(gpio_get_level(33) && gpio_get_level(16) == 1){printf("button * pressed!");}
-      else if(gpio_get_level(33) && gpio_get_level(17) == 1){printf("button 0 pressed!");}
-      else if(gpio_get_level(33) && gpio_get_level(5) == 1){printf("button # pressed!");}
-      else if(gpio_get_level(33) && gpio_get_level(18) == 1){printf("button D pressed!");}
-      }
-      gpio_set_level(27,0); gpio_set_level(26,0); gpio_set_level(25,0); gpio_set_level(33,0);
-    }
-  }
+
+    result = ((uint64_t)buf32_1 << 32) | ((uint64_t)buf32_0 << 0);
+
+    return result;
 }
