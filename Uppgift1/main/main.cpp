@@ -75,8 +75,12 @@ char32_t keyMap[NUM_ROWS][NUM_COLS] = {
     {'*','0','#', 'D'}
 };
 
+uint64_t debounceTimer = 0;
+
 extern "C" void app_main(void)
 {
+    debounceTimer = esp_timer_get_time();
+
     configureGpioPins();
 
     //create a queue to handle gpio event from isr
@@ -145,7 +149,11 @@ static void gpio_task(void* arg)
     for (;;) {
         if (xQueueReceive(gpio_evt_queue, &io_num, portMAX_DELAY)) 
         {
-            //  TODO: Add debounce check here.
+            // 50 * 1000 converts seconds to microsekunder.
+            if(esp_timer_get_time() - debounceTimer < 50 * 1000)
+            {
+                return;
+            }
 
             col_num = (gpio_num_t)io_num;
 
