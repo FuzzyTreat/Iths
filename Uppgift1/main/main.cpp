@@ -1,7 +1,4 @@
 #include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <inttypes.h>
 #include <iostream>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -9,21 +6,8 @@
 #include "driver/gpio.h"
 #include "esp_log.h"
 #include <esp_timer.h>
-#include "esp_system.h"
-#include "esp_event.h"
-
-// Uppgift
-// Implementera en kod som använder sig av GPIO för att ställa och läsa av värden från Keypad matrix.
-// Koden ska skriva ut i konsolen med hjälp av ESP_LOGI vilken knapp som har trycks ner.
-// "A" eller "1" till exempel.
-
-// Pinnarna ska vara definerade enligt bilden nedan, där pinne 1 är till höger i bilden och 8 till vänster.
-// Ni ska också förklara om ni har använt pull up/ pull down extern eller i mjukvara på respektive pinne. Skriv den informationen i en fil som heter README.md i top nivå på erat projekt.
-// Zippa hela projektet och ladda upp.
-// Mattias kommer ta bort sdkconfig så se till att lägga alla inställningar som krävs i sdkconfig.defaults
 
 // Pin placement on the keypad connector
-
 // 8 ------- 1
 
 // Keypad grid layout
@@ -34,8 +18,6 @@
 // 5   X X X X
 
 //     4 3 2 1
-
-// Högst upp ska 8 PIN definitioner finnas enligt följande:
 
 #define PIN1 GPIO_NUM_4     // Col 1    PULLDOWN SW
 #define PIN2 GPIO_NUM_18    // Col 2    PULLDOWN SW
@@ -143,7 +125,6 @@ static void gpio_isr_handler(void* arg)
 static void gpio_task(void* arg)
 {
     uint32_t io_num;
-    gpio_num_t row_num;
     gpio_num_t col_num;
 
     for (;;) {
