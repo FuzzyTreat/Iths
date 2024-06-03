@@ -34,7 +34,6 @@ static const char *TAG = "Keypad";
 #define COL_BIT_MASK ((1ULL << PIN1) | (1ULL << PIN2) | (1ULL << PIN3) | (1ULL << PIN4))
 #define ROW_BIT_MASK ((1ULL << PIN5) | (1ULL << PIN6) | (1ULL << PIN7) | (1ULL << PIN8))
 
-// Keypad Pins
 #define NUM_ROWS 4
 #define NUM_COLS 4
 
