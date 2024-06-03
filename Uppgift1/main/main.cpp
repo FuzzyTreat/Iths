@@ -117,7 +117,7 @@ void configureGpioPins()
 static void gpio_isr_handler(void* arg)
 {
     uint32_t gpio_num = (uint32_t) arg;
-    // Register the handler in order to switch context once and event has been triggered.
+    // Register the handler in order to switch context once an event has been triggered.
     // Things like ESP_LOGI can be used once the context no longer is ISR 
     xQueueSendFromISR(gpio_evt_queue, &gpio_num, NULL);
 }
@@ -128,9 +128,9 @@ static void gpio_task(void* arg)
     gpio_num_t col_num;
 
     for (;;) {
-        if (xQueueReceive(gpio_evt_queue, &io_num, portMAX_DELAY)) 
+        if (xQueueReceive(gpio_evt_queue, &io_num, pdMS_TO_TICKS(10))) // portMAX_DELAY will block indefinetly if  INCLUDEvTaskSuspend  is set to 1, otherwise has a block time of 0xffffffff 
         {
-            // 50 * 1000 converts seconds to microsekunder.
+            // 50 * 1000 converts seconds to milliseconds.
             if(esp_timer_get_time() - debounceTimer < 50 * 1000)
             {
                 return;
