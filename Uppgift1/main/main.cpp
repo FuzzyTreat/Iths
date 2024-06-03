@@ -126,15 +126,15 @@ static void gpio_task(void* arg)
     uint32_t io_num;
     gpio_num_t col_num;
 
+    // 50 * 1000 converts seconds to milliseconds.
+    if(esp_timer_get_time() - debounceTimer < 50 * 1000)
+    {
+        return;
+    }
+
     for (;;) {
         if (xQueueReceive(gpio_evt_queue, &io_num, pdMS_TO_TICKS(10))) // portMAX_DELAY will block indefinetly if  INCLUDEvTaskSuspend  is set to 1, otherwise has a block time of 0xffffffff 
         {
-            // 50 * 1000 converts seconds to milliseconds.
-            if(esp_timer_get_time() - debounceTimer < 50 * 1000)
-            {
-                return;
-            }
-
             col_num = (gpio_num_t)io_num;
 
             for(int i = 0; i < NUM_ROWS; i++)
