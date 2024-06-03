@@ -133,7 +133,7 @@ static void gpio_task(void* arg)
     }
 
     for (;;) {
-        if (xQueueReceive(gpio_evt_queue, &io_num, pdMS_TO_TICKS(10))) // portMAX_DELAY will block indefinetly if  INCLUDEvTaskSuspend  is set to 1, otherwise has a block time of 0xffffffff 
+        if (xQueueReceive(gpio_evt_queue, &io_num, pdMS_TO_TICKS(10))) // portMAX_DELAY will block indefinetly if vTaskSuspend is set to 1, otherwise has a block time of 0xffffffff 
         {
             col_num = (gpio_num_t)io_num;
 

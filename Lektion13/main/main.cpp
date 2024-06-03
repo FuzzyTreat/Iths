@@ -6,17 +6,16 @@
 #include <esp_timer.h>
 #include "mpu6050.h"
 
-#define INTERRUPT_PIN GPIO_NUM_27
-
-static const char *TAG = "MAIN";
-
 #define I2C_SDA_PIN GPIO_NUM_13
 #define I2C_SCL_PIN GPIO_NUM_14
 #define I2C_FREQ_HZ 400000
 #define I2C_PORT I2C_NUM_0
 
+static const char *TAG = "MPU6050";
+
 mpu6050_handle_t mpuHandle;
-mpu6050_raw_acce_value_t  acceleration;
+mpu6050_raw_acce_value_t acceleration;
+mpu6050_raw_gyro_value_t rotation;
 
 extern "C" void app_main(void)
 {
@@ -41,6 +40,7 @@ extern "C" void app_main(void)
     // while(true)
     // {
     //     ESP_ERROR_CHECK_WITHOUT_ABORT(mpu6050_get_raw_acce(mpuHandle, &acceleration));
+    //     ESP_ERROR_CHECK_WITHOUT_ABORT(mpu6050_get_raw_gyro(mpuHandle, &rotation));
 
     //     ESP_LOGI(TAG,"X: %d Y: %d Z: %d", acceleration.raw_acce_x, acceleration.raw_acce_y, acceleration.raw_acce_z);
 
