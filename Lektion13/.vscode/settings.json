@@ -13,5 +13,6 @@
         "target/esp32.cfg"
     ],
     "idf.pythonBinPathWin": "C:\\Users\\Per\\.espressif\\python_env\\idf5.2_py3.11_env\\Scripts\\python.exe",
-    "idf.toolsPathWin": "C:\\Users\\Per\\.espressif"
+    "idf.toolsPathWin": "C:\\Users\\Per\\.espressif",
+    "idf.portWin": "COM3"
 }
