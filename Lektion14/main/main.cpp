@@ -3,12 +3,14 @@
 #include "esp_log.h"
 #include "driver/gpio.h"
 #include "esp_sleep.h"
+#include <driver/rtc_io.h>
 
 const char *TAG = "MAIN";
 RTC_DATA_ATTR int counter = 0;
+RTC_DATA_ATTR esp_sleep_wakeup_cause_t wakeUpCause;
 
 #define SLEEP_WAKEUP_TIME 2000 * 1000
-#define WAKEUP_BUTTON_PIN GPIO_NUM_14
+#define WAKEUP_BUTTON_PIN GPIO_NUM_25
 void HandleWakeupCall();
 
 
@@ -33,27 +35,27 @@ extern "C" void app_main(void)
     
     esp_sleep_enable_gpio_wakeup();
 
-    while(true)
-    {
-        ESP_LOGI(TAG,"Counter: %d", counter++);
-        vTaskDelay(50);
+    // while(true)
+    // {
+    //     ESP_LOGI(TAG,"Counter: %d", counter++);
+    //     vTaskDelay(50);
 
-        if(counter % 20 == 0)
-        {
-            esp_deep_sleep_start();
-        }
+    //     if(counter % 20 == 0)
+    //     {
+    //         esp_deep_sleep_start();
+    //     }
 
-        ESP_ERROR_CHECK(esp_light_sleep_start());
+    //     ESP_ERROR_CHECK(esp_light_sleep_start());
 
-        HandleWakeupCall();
+    //     HandleWakeupCall();
 
-        vTaskDelay(pdMS_TO_TICKS(1000));
-    }
+    //     vTaskDelay(pdMS_TO_TICKS(1000));
+    // }
 }
 
 void HandleWakeupCall()
 {
-    esp_sleep_wakeup_cause_t wakeUpCause = esp_sleep_get_wakeup_cause();
+    wakeUpCause = esp_sleep_get_wakeup_cause();
 
     switch(wakeUpCause)
     {
