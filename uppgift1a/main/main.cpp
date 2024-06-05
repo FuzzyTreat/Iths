@@ -21,8 +21,8 @@
 
 #define PIN1 GPIO_NUM_4     // Col 1    PULLDOWN SW
 #define PIN2 GPIO_NUM_18    // Col 2    PULLDOWN SW
-#define PIN3 GPIO_NUM_26    // Col 3    PULLDOWN SW
-#define PIN4 GPIO_NUM_27    // Col 4    PULLDOWN SW
+#define PIN3 GPIO_NUM_32    // Col 3    PULLDOWN SW
+#define PIN4 GPIO_NUM_33    // Col 4    PULLDOWN SW
 
 #define PIN8 GPIO_NUM_19    // Row 5    PULLUP SW
 #define PIN7 GPIO_NUM_21    // Row 6    PULLUP SW
@@ -36,9 +36,6 @@ static const char *TAG = "Keypad";
 
 #define NUM_ROWS 4
 #define NUM_COLS 4
-
-#define PIN_HIGH 1
-#define PIN_LOW 0
 
 #define ESP_INTR_FLAG_DEFAULT 0
 
@@ -63,8 +60,6 @@ uint64_t debounceTimer = 0;
 
 extern "C" void app_main(void)
 {
-    bool isRunning = true;
-
     debounceTimer = esp_timer_get_time();
 
     configureGpioPins();
@@ -75,7 +70,7 @@ extern "C" void app_main(void)
     //start gpio task, runs a loop which will handle the Queue events when they happen, a way to get out of ISR with data.
     xTaskCreate(gpio_task, "gpio_task", 2048, NULL, 10, NULL);
 
-    // //install gpio isr service
+    //install gpio isr service
     gpio_install_isr_service(ESP_INTR_FLAG_DEFAULT);
 
     for(int i = 0; i< NUM_COLS; i++)
@@ -89,10 +84,10 @@ extern "C" void app_main(void)
         gpio_isr_handler_add(col_pins[i], gpio_isr_handler, (void*) col_pins[i]);
     }
 
-    while(isRunning)
+    for(;;)
     {
         // Main loop, contains a delay just to stop the process from being a run away.
-        vTaskDelay(pdMS_TO_TICKS(10));
+        vTaskDelay(pdMS_TO_TICKS(25));
     }
 }
 
@@ -110,7 +105,7 @@ void configureGpioPins()
     gpio_config(&gpioConfig);
 
     gpioConfig.intr_type = GPIO_INTR_DISABLE;
-    gpioConfig.mode = GPIO_MODE_OUTPUT;
+    gpioConfig.mode = GPIO_MODE_INPUT;
     gpioConfig.pin_bit_mask = ROW_BIT_MASK;
     gpioConfig.pull_down_en = GPIO_PULLDOWN_DISABLE;
     gpioConfig.pull_up_en = GPIO_PULLUP_ENABLE;
@@ -129,48 +124,31 @@ static void gpio_isr_handler(void* arg)
 static void gpio_task(void* arg)
 {
     uint32_t io_num;
-    gpio_num_t col_pin;
+    gpio_num_t col_num;
+
+    // 50 * 1000 converts seconds to milliseconds.
+    if(esp_timer_get_time() - debounceTimer < 50 * 1000)
+    {
+        return;
+    }
 
     for (;;) {
         if (xQueueReceive(gpio_evt_queue, &io_num, pdMS_TO_TICKS(10))) // portMAX_DELAY will block indefinetly if vTaskSuspend is set to 1, otherwise has a block time of 0xffffffff 
         {
-            // 50 * 1000 converts seconds to milliseconds.
-            // if(esp_timer_get_time() - debounceTimer < 50 * 1000)
-            // {
-            //     return;
-            // }
-
-            col_pin = (gpio_num_t)io_num;
-
-            gpio_set_level(col_pin, 0);
+            col_num = (gpio_num_t)io_num;
 
             for(int i = 0; i < NUM_ROWS; i++)
             {
-                gpio_set_level(row_pins[i], PIN_HIGH);
-
-                if(gpio_get_level(col_pin) == PIN_HIGH)
+                if(gpio_get_level(row_pins[i]) == 0)
                 {
                     // Call method for extracting the letter from the pre prepared matrix
-                    char32_t key = ReadKeyChar(i, col_pin);
+                    char32_t key = ReadKeyChar(i, col_num);
 
                     // Send the key press to the terminal
                     ESP_LOGI(TAG,"%c", key);
                     break;
                 }
             }
-
-        // for(int i = 0; i < NUM_ROWS; i++)
-        // {
-        //     if(gpio_get_level(row_pins[i]) == 0)
-        //     {
-        //         // Call method for extracting the letter from the pre prepared matrix
-        //         char32_t key = ReadKeyChar(i, col_num);
-
-        //         // Send the key press to the terminal
-        //         ESP_LOGI(TAG,"%c", key);
-        //         break;
-        //     }
-        // }
         }
     }
 }
