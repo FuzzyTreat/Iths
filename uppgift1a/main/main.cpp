@@ -37,6 +37,9 @@ static const char *TAG = "Keypad";
 #define NUM_ROWS 4
 #define NUM_COLS 4
 
+#define PIN_HIGH 1
+#define PIN_LOW 0
+
 #define ESP_INTR_FLAG_DEFAULT 0
 
 static QueueHandle_t gpio_evt_queue = NULL;
@@ -47,7 +50,7 @@ char32_t ReadKeyChar(uint32_t row_num, gpio_num_t col_pin);
 void configureGpioPins();
 
 static gpio_num_t col_pins[] = {PIN4, PIN3, PIN2, PIN1};
-static gpio_num_t row_pins[] = {PIN5, PIN6, PIN7, PIN8};
+static gpio_num_t row_pins[] = {PIN8, PIN7, PIN6, PIN5};
 
 char32_t keyMap[NUM_ROWS][NUM_COLS] = {
     {'1','2','3', 'A'},
@@ -111,6 +114,16 @@ void configureGpioPins()
     gpioConfig.pull_up_en = GPIO_PULLUP_ENABLE;
 
     gpio_config(&gpioConfig);
+
+    for(int i = 0;i < NUM_COLS; i++)
+    {
+        gpio_set_level(col_pins[i], PIN_LOW);
+    }
+
+    for(int i = 0;i < NUM_ROWS; i++)
+    {
+        gpio_set_level(row_pins[i], PIN_HIGH);
+    }
 }
 
 static void gpio_isr_handler(void* arg)
@@ -139,7 +152,7 @@ static void gpio_task(void* arg)
 
             for(int i = 0; i < NUM_ROWS; i++)
             {
-                if(gpio_get_level(row_pins[i]) == 0)
+                if(gpio_get_level(row_pins[i]) == PIN_LOW)
                 {
                     // Call method for extracting the letter from the pre prepared matrix
                     char32_t key = ReadKeyChar(i, col_num);
