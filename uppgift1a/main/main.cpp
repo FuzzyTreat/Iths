@@ -45,7 +45,7 @@ static const char *TAG = "Keypad";
 static QueueHandle_t gpio_evt_queue = NULL;
 static void gpio_isr_handler(void* arg);
 static void gpio_task(void* arg);
-char32_t ReadKeyChar(uint32_t row_num, gpio_num_t col_pin);
+char32_t ReadKeyChar(gpio_num_t row_pin, uint32_t col_num);
 
 void configureGpioPins();
 
@@ -76,15 +76,15 @@ extern "C" void app_main(void)
     //install gpio isr service
     gpio_install_isr_service(ESP_INTR_FLAG_DEFAULT);
 
-    for(int i = 0; i< NUM_COLS; i++)
+    for(int i = 0; i< NUM_ROWS; i++)
     {
         // not really sure why this is done this way, could be the same slowness which the lcd had.
         //hook isr handler for specific gpio pin
-        gpio_isr_handler_add(col_pins[i], gpio_isr_handler, (void*) col_pins[i]); // Tells you which column the trigger was
+        gpio_isr_handler_add(row_pins[i], gpio_isr_handler, (void*) row_pins[i]); // Tells you which column the trigger was
         //remove isr handler for gpio number.
-        gpio_isr_handler_remove(col_pins[i]);
+        gpio_isr_handler_remove(row_pins[i]);
         //hook isr handler for specific gpio pin again
-        gpio_isr_handler_add(col_pins[i], gpio_isr_handler, (void*) col_pins[i]);
+        gpio_isr_handler_add(row_pins[i], gpio_isr_handler, (void*) row_pins[i]);
     }
 
     for(;;)
@@ -99,7 +99,7 @@ void configureGpioPins()
 {
     gpio_config_t gpioConfig;
 
-    gpioConfig.intr_type = GPIO_INTR_POSEDGE;
+    gpioConfig.intr_type = GPIO_INTR_DISABLE;
     gpioConfig.mode = GPIO_MODE_INPUT;
     gpioConfig.pin_bit_mask = COL_BIT_MASK;
     gpioConfig.pull_down_en = GPIO_PULLDOWN_ENABLE;
@@ -107,8 +107,8 @@ void configureGpioPins()
 
     gpio_config(&gpioConfig);
 
-    gpioConfig.intr_type = GPIO_INTR_DISABLE;
-    gpioConfig.mode = GPIO_MODE_INPUT;
+    gpioConfig.intr_type = GPIO_INTR_NEGEDGE;
+    gpioConfig.mode = GPIO_MODE_OUTPUT;
     gpioConfig.pin_bit_mask = ROW_BIT_MASK;
     gpioConfig.pull_down_en = GPIO_PULLDOWN_DISABLE;
     gpioConfig.pull_up_en = GPIO_PULLUP_ENABLE;
@@ -137,7 +137,7 @@ static void gpio_isr_handler(void* arg)
 static void gpio_task(void* arg)
 {
     uint32_t io_num;
-    gpio_num_t col_num;
+    gpio_num_t row_num;
 
     // 50 * 1000 converts seconds to milliseconds.
     if(esp_timer_get_time() - debounceTimer < 50 * 1000)
@@ -148,14 +148,16 @@ static void gpio_task(void* arg)
     for (;;) {
         if (xQueueReceive(gpio_evt_queue, &io_num, pdMS_TO_TICKS(10))) // portMAX_DELAY will block indefinetly if vTaskSuspend is set to 1, otherwise has a block time of 0xffffffff 
         {
-            col_num = (gpio_num_t)io_num;
+            row_num = (gpio_num_t)io_num;
 
-            for(int i = 0; i < NUM_ROWS; i++)
+            for(int i = 0; i < NUM_COLS; i++)
             {
-                if(gpio_get_level(row_pins[i]) == PIN_LOW)
+                gpio_set_level(row_pins[i], 1);
+
+                if(gpio_get_level(col_pins[i]) == PIN_HIGH)
                 {
                     // Call method for extracting the letter from the pre prepared matrix
-                    char32_t key = ReadKeyChar(i, col_num);
+                    char32_t key = ReadKeyChar(row_num, i);
 
                     // Send the key press to the terminal
                     ESP_LOGI(TAG,"%c", key);
@@ -170,15 +172,15 @@ static void gpio_task(void* arg)
 /// @param row_num 
 /// @param col_pin 
 /// @return Returns a single char32_t value or throws and error
-char32_t ReadKeyChar(uint32_t row_num, gpio_num_t col_pin)
+char32_t ReadKeyChar(gpio_num_t row_pin, uint32_t col_num)
 {
-    uint32_t col_num = 0;
+    uint32_t row_num = 0;
 
-    for(int i = 0; i < NUM_COLS; i++)
+    for(int i = 0; i < NUM_ROWS; i++)
     {
-        if(col_pins[i] == col_pin)
+        if(row_pins[i] == row_pin)
         {
-            col_num = i;
+            row_num = i;
             break;
         }
     }
