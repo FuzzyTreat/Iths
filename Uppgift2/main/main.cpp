@@ -7,6 +7,9 @@
 #define UP_BUTTON_PIN GPIO_NUM_18
 #define DOWN_BUTTON_PIN GPIO_NUM_19
 
+#define LED_RED_PIN GPIO_NUM_25
+#define LED_YELLOW_PIN GPIO_NUM_26
+
 const char *TAG = "Main";
 
 Button *upButton;
@@ -16,28 +19,29 @@ void OnButtonPressed(void *ptr);
 void OnButtonReleased(void *ptr);
 void RegisterButtons();
 
+gpio_num_t prevButton;
+
 extern "C" void app_main(void)
 {
-    gpio_pulldown_en(GPIO_NUM_12);
-    gpio_pulldown_en(GPIO_NUM_14);
+    gpio_pulldown_en(LED_RED_PIN);
+    gpio_pulldown_en(LED_YELLOW_PIN);
 
-    gpio_pullup_dis(GPIO_NUM_12);
-    gpio_pullup_dis(GPIO_NUM_14);
+    gpio_pullup_dis(LED_RED_PIN);
+    gpio_pullup_dis(LED_YELLOW_PIN);
 
-    gpio_set_level(GPIO_NUM_12, 0);
-    gpio_set_level(GPIO_NUM_14, 0);
+    gpio_set_level(LED_RED_PIN, 0);
+    gpio_set_level(LED_YELLOW_PIN, 0);
 
-    gpio_set_direction(GPIO_NUM_12, GPIO_MODE_OUTPUT);
-    gpio_set_direction(GPIO_NUM_14, GPIO_MODE_OUTPUT);
+    gpio_set_direction(LED_RED_PIN, GPIO_MODE_OUTPUT);
+    gpio_set_direction(LED_YELLOW_PIN, GPIO_MODE_OUTPUT);
 
     RegisterButtons();
 
     while(true)
     {
-        vTaskDelay(pdMS_TO_TICKS(10));
-
-        gpio_set_level(GPIO_NUM_12, 0);
-        gpio_set_level(GPIO_NUM_14, 0);
+        vTaskDelay(pdMS_TO_TICKS(500));
+        gpio_set_level(LED_RED_PIN, 0);
+        gpio_set_level(LED_YELLOW_PIN, 0);
 
         upButton->Update();
         downButton->Update();
@@ -58,29 +62,26 @@ void RegisterButtons()
 void OnButtonPressed(void *ptr)
 {
     gpio_num_t pin = ((Button *)ptr)->GetPin();
-    ESP_LOGI(TAG,"Button pressed on pin %d", pin);
+    prevButton = pin;
 
     switch (pin)
     {
-        case GPIO_NUM_18:
+    case UP_BUTTON_PIN:
         {
-            gpio_set_level(GPIO_NUM_12, 1);
-            gpio_set_level(GPIO_NUM_14, 0);
+            gpio_set_level(LED_RED_PIN, 1);
             break;
         }
-        case GPIO_NUM_19:
+    case DOWN_BUTTON_PIN:
         {
-            gpio_set_level(GPIO_NUM_12, 0);
-            gpio_set_level(GPIO_NUM_14, 1);
-            break;
-        }   
-        default:
-        {
-            gpio_set_level(GPIO_NUM_12, 0);
-            gpio_set_level(GPIO_NUM_14, 0);
+            gpio_set_level(LED_YELLOW_PIN, 1);
             break;
         }
+    default:
+        break;
     }
+
+    
+    ESP_LOGI(TAG,"Button pressed on pin %d", pin);
 }
 
 void OnButtonReleased(void *ptr)
