@@ -1,7 +1,7 @@
 #ifndef VALUESELECTOR_H
 #define VALUESELECTOR_H
 
-typedef enum class SelectedValue_e : int32_t
+typedef enum class SelectedValue_e : int16_t
 {
     Acceleration_X = 0,
     Acceleration_Y = 1,
