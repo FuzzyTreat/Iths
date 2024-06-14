@@ -107,10 +107,11 @@ void OnSelectedValueChanged(void *ptr)
     ValueSelector selector = *((ValueSelector *)ptr);
 
     // Read the current value from the sensor.
-    std::string text = sensor->GetReadOut((uint16_t)selector.GetCurrentValue());
-    ESP_LOGI(TAG,"%s", text.data());
+    std::string text = "";
+    
+    sensor->GetReadOut((uint16_t)selector.GetCurrentValue(), text);
+    // ESP_LOGI(TAG,"%s", text.data());
 
     // Send text to LCD display
     lcd->lcd_print(text.c_str());
-    // lcd_print("Hello, World!");
 };
