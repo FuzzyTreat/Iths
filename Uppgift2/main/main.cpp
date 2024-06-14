@@ -8,35 +8,29 @@
 #include <esp_timer.h>
 #include "Button.h"
 #include "ValueSelector.h"
-// #include "mpu6050.h"
 #include "Sensor6050.h"
+#include "LCD1602.h"
 
 #define UP_BUTTON_PIN GPIO_NUM_18
 #define DOWN_BUTTON_PIN GPIO_NUM_19
 
-#define LED_RED_PIN GPIO_NUM_25
-#define LED_YELLOW_PIN GPIO_NUM_26
-
 #define I2C_SDA_PIN GPIO_NUM_13
 #define I2C_SCL_PIN GPIO_NUM_14
-#define I2C_FREQ_HZ 100000 // Standard-mode: 100KHz, Fast-mode: 400KHz. Should be max fast-mode
+#define I2C_FREQ_HZ 100000 // Standard-mode: 100KHz, Fast-mode: 400KHz. Should be max fast-mode if LCD isn't used
 #define I2C_PORT I2C_NUM_0
 
 const char *TAG = "Main";
 
 Button *upButton;
 Button *downButton;
+ValueSelector *selector;
+Sensor6050 *sensor;
+LCD1602 *lcd;
 
 void OnButtonPressed(void *ptr);
 void OnButtonReleased(void *ptr);
 void RegisterComponents();
-
-ValueSelector *selector;
 void OnSelectedValueChanged(void *ptr);
-
-Sensor6050 *sensor;
-
-gpio_num_t prevButton;
 
 extern "C" void app_main(void)
 {
@@ -68,12 +62,10 @@ void RegisterComponents()
     ESP_LOGI(TAG,"Registering up button.");
     upButton = new Button(UP_BUTTON_PIN, PT_down);
     upButton->SetOnPressed(OnButtonPressed, (void *)upButton);
-    upButton->SetOnRelease(OnButtonReleased, (void *)upButton);
 
     ESP_LOGI(TAG,"Registering down button.");
     downButton = new Button(DOWN_BUTTON_PIN, PT_down);
     downButton->SetOnPressed(OnButtonPressed, (void *)downButton);
-    downButton->SetOnRelease(OnButtonReleased, (void *)downButton);
 
     ESP_LOGI(TAG,"Registering selector.");
     selector = new ValueSelector(SelectedValue_e::Acceleration_X);
@@ -81,12 +73,15 @@ void RegisterComponents()
 
     ESP_LOGI(TAG,"Registering mpu6050.");
     sensor = new Sensor6050(I2C_PORT);
+
+    ESP_LOGI(TAG,"Registering lcd 1602.");
+    lcd = new LCD1602(I2C_SCL_PIN, I2C_SDA_PIN, I2C_PORT);
+    lcd->lcd_init();
 }
 
 void OnButtonPressed(void *ptr)
 {
     gpio_num_t pin = ((Button *)ptr)->GetPin();
-    prevButton = pin;
 
     switch (pin)
     {
@@ -104,12 +99,7 @@ void OnButtonPressed(void *ptr)
             break;
     }
     
-    ESP_LOGI(TAG,"Button pressed on pin %d", pin);
-}
-
-void OnButtonReleased(void *ptr)
-{
-
+    // ESP_LOGI(TAG,"Button pressed on pin %d", pin);
 }
 
 void OnSelectedValueChanged(void *ptr)
@@ -121,6 +111,6 @@ void OnSelectedValueChanged(void *ptr)
     ESP_LOGI(TAG,"%s", text.data());
 
     // Send text to LCD display
-
-        
+    lcd->lcd_print(text.c_str());
+    // lcd_print("Hello, World!");
 };
