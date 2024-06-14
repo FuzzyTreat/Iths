@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <iostream>
+#include <string>
 #include "freertos/FreeRTOS.h"
 #include "driver/gpio.h"
 #include "driver/i2c.h"
@@ -28,17 +29,12 @@ Button *downButton;
 
 void OnButtonPressed(void *ptr);
 void OnButtonReleased(void *ptr);
-void RegisterButtons();
-
+void RegisterComponents();
 
 ValueSelector *selector;
 void OnSelectedValueChanged(void *ptr);
 
 Sensor6050 *sensor;
-
-void SetupI2C();
-
-void SetupLedGpio();
 
 gpio_num_t prevButton;
 
@@ -56,37 +52,18 @@ extern "C" void app_main(void)
     ESP_ERROR_CHECK(i2c_param_config(I2C_PORT, &i2cConfig));
     ESP_ERROR_CHECK(i2c_driver_install(I2C_PORT, i2cConfig.mode, 0, 0, 0));
 
-    // SetupLedGpio(); // Can be removed, just for debug purpose
-    
-    RegisterButtons();
+    RegisterComponents();
 
     while(true)
     {
         vTaskDelay(pdMS_TO_TICKS(50));
-        gpio_set_level(LED_RED_PIN, 0);
-        gpio_set_level(LED_YELLOW_PIN, 0);
 
         upButton->Update();
         downButton->Update();
     }
 }
 
-void SetupLedGpio()
-{
-    gpio_pulldown_en(LED_RED_PIN);
-    gpio_pulldown_en(LED_YELLOW_PIN);
-
-    gpio_pullup_dis(LED_RED_PIN);
-    gpio_pullup_dis(LED_YELLOW_PIN);
-
-    gpio_set_level(LED_RED_PIN, 0);
-    gpio_set_level(LED_YELLOW_PIN, 0);
-
-    gpio_set_direction(LED_RED_PIN, GPIO_MODE_OUTPUT);
-    gpio_set_direction(LED_YELLOW_PIN, GPIO_MODE_OUTPUT);
-};
-
-void RegisterButtons()
+void RegisterComponents()
 {
     ESP_LOGI(TAG,"Registering up button.");
     upButton = new Button(UP_BUTTON_PIN, PT_down);
@@ -126,43 +103,24 @@ void OnButtonPressed(void *ptr)
         default:
             break;
     }
-
     
     ESP_LOGI(TAG,"Button pressed on pin %d", pin);
 }
 
 void OnButtonReleased(void *ptr)
 {
-    // gpio_num_t pin = ((Button *)ptr)->GetPin();
-    // ESP_LOGI(TAG,"Button released on pin %d", pin);
 
-    int16_t value = sensor->ReadValue((int16_t)selector->GetCurrentValue());
-    ESP_LOGI(TAG,"Value from sensor %d", value);
 }
 
 void OnSelectedValueChanged(void *ptr)
 {
     ValueSelector selector = *((ValueSelector *)ptr);
 
-    // Read Value from Accelerometer here!!
-    // Send text to LCD display
-    
-    switch (selector.GetDirection())
-    {
-        case MoveUp:
-        {
-            gpio_set_level(LED_RED_PIN, 1);
-            ESP_LOGI(TAG, "Current selectedValue %ld", selector.GetCurrentValue());
-            break;
-        }
+    // Read the current value from the sensor.
+    std::string text = sensor->GetReadOut((uint16_t)selector.GetCurrentValue());
+    ESP_LOGI(TAG,"%s", text.data());
 
-        case MoveDown:
-        {
-            gpio_set_level(LED_YELLOW_PIN, 1);
-            ESP_LOGI(TAG, "Current selectedValue %ld", selector.GetCurrentValue());
-            break;
-        }
-        default:
-            break;
-    }
+    // Send text to LCD display
+
+        
 };

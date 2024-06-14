@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <iostream>
+#include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "driver/gpio.h"
 #include "esp_log.h"
@@ -25,6 +26,7 @@ class Sensor6050
     public:
     Sensor6050(i2c_port_t port);
     ~Sensor6050();
+    std::string GetReadOut(uint16_t selected);
     int16_t ReadValue(uint16_t selected);
 };
 

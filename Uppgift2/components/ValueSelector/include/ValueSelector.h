@@ -9,9 +9,9 @@ typedef enum class SelectedValue_e : int16_t
     Rotation_X = 3,
     Rotation_Y = 4,
     Rotation_Z = 5
-} SelectedValue_e;
+}SelectedValue_e;
 
-typedef enum ChangeDirection_e
+typedef enum
 {
     None,
     MoveUp,
