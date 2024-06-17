@@ -3,7 +3,7 @@
 #include <string>
 #include "freertos/FreeRTOS.h"
 #include "driver/gpio.h"
-#include "driver/i2c.h"
+#include "driver/i2c_master.h"
 #include "esp_log.h"
 #include <esp_timer.h>
 #include "Button.h"
@@ -16,7 +16,7 @@
 
 #define I2C_SDA_PIN GPIO_NUM_13
 #define I2C_SCL_PIN GPIO_NUM_14
-#define I2C_FREQ_HZ 100000 // Standard-mode: 100KHz, Fast-mode: 400KHz. Should be max fast-mode if LCD isn't used
+#define I2C_FREQ_HZ 100000 // Standard-mode: 100KHz, Fast-mode: 400KHz. Should be max fast-mode if LCD isn't used otherwise 100 KHz
 #define I2C_PORT I2C_NUM_0
 
 const char *TAG = "Main";
@@ -60,11 +60,11 @@ extern "C" void app_main(void)
 void RegisterComponents()
 {
     ESP_LOGI(TAG,"Registering up button.");
-    upButton = new Button(UP_BUTTON_PIN, PT_down);
+    upButton = new Button(UP_BUTTON_PIN, PT_none);
     upButton->SetOnPressed(OnButtonPressed, (void *)upButton);
 
     ESP_LOGI(TAG,"Registering down button.");
-    downButton = new Button(DOWN_BUTTON_PIN, PT_down);
+    downButton = new Button(DOWN_BUTTON_PIN, PT_none);
     downButton->SetOnPressed(OnButtonPressed, (void *)downButton);
 
     ESP_LOGI(TAG,"Registering selector.");
@@ -108,7 +108,6 @@ void OnSelectedValueChanged(void *ptr)
 
     // Read the current value from the sensor.
     std::string text = "";
-    
     sensor->GetReadOut((uint16_t)selector.GetCurrentValue(), text);
     // ESP_LOGI(TAG,"%s", text.data());
 
