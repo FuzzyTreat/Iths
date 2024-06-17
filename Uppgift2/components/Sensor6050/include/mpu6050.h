@@ -15,8 +15,7 @@
 extern "C" {
 #endif
 
-// #include "driver/i2c.h"
-#include "driver/i2c_master.h"
+#include "driver/i2c.h"
 #include "driver/gpio.h"
 
 #define MPU6050_I2C_ADDRESS         0x68u /*!< I2C address with AD0 pin low */

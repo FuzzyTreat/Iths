@@ -3,7 +3,7 @@
 #include <string>
 #include "freertos/FreeRTOS.h"
 #include "driver/gpio.h"
-#include "driver/i2c_master.h"
+#include "driver/i2c.h"
 #include "esp_log.h"
 #include <esp_timer.h>
 #include "Button.h"
