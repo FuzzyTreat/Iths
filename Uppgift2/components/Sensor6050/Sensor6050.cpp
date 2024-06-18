@@ -16,7 +16,7 @@ Sensor6050::~Sensor6050(){}
 
 void Sensor6050::GetReadOut(uint16_t selected, std::string &text)
 {
-    uint16_t value = ReadValue(selected);
+    int16_t value = ReadValue(selected);
 
     switch (selected)
     {
