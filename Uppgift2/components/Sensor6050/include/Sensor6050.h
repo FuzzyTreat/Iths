@@ -13,22 +13,26 @@
 class Sensor6050
 {
     private:
-    mpu6050_handle_t mpuHandle;
-    mpu6050_raw_acce_value_t acceleration;
-    mpu6050_raw_gyro_value_t rotation;
+        mpu6050_handle_t mpuHandle;
 
-    i2c_port_t ic2_port;
+        i2c_port_t i2c_port;
 
-    int16_t ReadAccelerationValue(uint16_t selected);
-    int16_t ReadRotationValue(uint16_t selected);
+        mpu6050_acce_fs_t accelerationSensitivity;
+        mpu6050_gyro_fs_t rotationSensitivity;
+
+        mpu6050_acce_value_t acceleration;
+        mpu6050_gyro_value_t rotation;
+
+        int16_t ReadAccelerationValue(uint16_t selected);
+        int16_t ReadRotationValue(uint16_t selected);
 
     protected:
 
     public:
-    Sensor6050(i2c_port_t port);
-    ~Sensor6050();
-    void GetReadOut(uint16_t selected, std::string &text);
-    int16_t ReadValue(uint16_t selected);
+        Sensor6050(i2c_port_t port, mpu6050_acce_fs_t accSensitivity, mpu6050_gyro_fs_t rotSensitivity);
+        ~Sensor6050();
+        void GetReadOut(uint16_t selected, std::string &text);
+        int16_t ReadValue(uint16_t selected);
 };
 
 #endif

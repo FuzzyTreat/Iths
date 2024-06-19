@@ -60,6 +60,7 @@ class LCD1602
 
     void lcd_init(void);
     void lcd_print(const char *str);
+    void ClearScreen();
 };
 
 #endif

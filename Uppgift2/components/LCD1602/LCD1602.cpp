@@ -65,9 +65,9 @@ void LCD1602::lcd_init(void) {
 
     vTaskDelay(pdMS_TO_TICKS(50)); // wait for >40ms
     lcd_send_cmd(0x30);
-    vTaskDelay(pdMS_TO_TICKS(5));  // wait for >4.1ms
+    vTaskDelay(pdMS_TO_TICKS(10));  // wait for >4.1ms
     lcd_send_cmd(0x30);
-    vTaskDelay(pdMS_TO_TICKS(1));  // wait for >100us
+    vTaskDelay(pdMS_TO_TICKS(10));  // wait for >100us
     lcd_send_cmd(0x30);
     vTaskDelay(pdMS_TO_TICKS(10));
     lcd_send_cmd(0x20);  // 4-bit mode
@@ -84,13 +84,14 @@ void LCD1602::lcd_init(void) {
 }
  
 void LCD1602::lcd_print(const char *str) {
-
-    vTaskDelay(pdMS_TO_TICKS(10));
-    lcd_send_cmd(LCD_CMD_CLEAR_DISPLAY);
-    vTaskDelay(pdMS_TO_TICKS(10));
-
     while (*str) {
         lcd_send_data((uint8_t)(*str));
         str++;
     }
+}
+
+void LCD1602::ClearScreen()
+{
+    lcd_send_cmd(LCD_CMD_CLEAR_DISPLAY);
+    vTaskDelay(pdMS_TO_TICKS(10));
 }

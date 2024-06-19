@@ -2,6 +2,7 @@
 #include <iostream>
 #include <string>
 #include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include "driver/gpio.h"
 #include "driver/i2c.h"
 #include "esp_log.h"
@@ -31,6 +32,11 @@ void OnButtonPressed(void *ptr);
 void OnButtonReleased(void *ptr);
 void RegisterComponents();
 void OnSelectedValueChanged(void *ptr);
+void UpdateReadout(void *ptr);
+
+std::string displayText = "";
+BaseType_t xReturned;
+TaskHandle_t xHandle = NULL;
 
 extern "C" void app_main(void)
 {
@@ -48,12 +54,19 @@ extern "C" void app_main(void)
 
     RegisterComponents();
 
+    xTaskCreate(UpdateReadout, "LcdPrint", 6000, (void *) 1, tskIDLE_PRIORITY, &xHandle);
+
     while(true)
     {
-        vTaskDelay(pdMS_TO_TICKS(50));
-
         upButton->Update();
         downButton->Update();
+
+        vTaskDelay(pdMS_TO_TICKS(50));
+    }
+
+    if(xHandle != NULL)
+    {
+        vTaskDelete(xHandle);
     }
 }
 
@@ -72,7 +85,7 @@ void RegisterComponents()
     selector->SetOnChanged(OnSelectedValueChanged, (void *)selector);
 
     ESP_LOGI(TAG,"Registering mpu6050.");
-    sensor = new Sensor6050(I2C_PORT);
+    sensor = new Sensor6050(I2C_PORT, ACCE_FS_16G, GYRO_FS_1000DPS);
 
     ESP_LOGI(TAG,"Registering lcd 1602.");
     lcd = new LCD1602(I2C_SCL_PIN, I2C_SDA_PIN, I2C_PORT);
@@ -106,11 +119,22 @@ void OnSelectedValueChanged(void *ptr)
 {
     ValueSelector selector = *((ValueSelector *)ptr);
 
-    // Read the current value from the sensor.
-    std::string text = "";
-    sensor->GetReadOut((uint16_t)selector.GetCurrentValue(), text);
-    // ESP_LOGI(TAG,"%s", text.data());
+    // // Read the current value from the sensor.
+    sensor->GetReadOut((uint16_t)selector.GetCurrentValue(), displayText);
 
-    // Send text to LCD display
-    lcd->lcd_print(text.c_str());
-};
+    // ESP_LOGI(TAG,"%s", text.data());
+}
+
+void UpdateReadout(void *ptr)
+{
+    for(;;)
+    {
+        sensor->GetReadOut((uint16_t)selector->GetCurrentValue(), displayText);
+
+        lcd->ClearScreen();
+        // Send text to LCD display
+        lcd->lcd_print(displayText.c_str());
+
+        vTaskDelay(pdMS_TO_TICKS(50));
+    }
+}

@@ -5,10 +5,10 @@
 
 static const char *TAG = "MPU6050";
 
-Sensor6050::Sensor6050(i2c_port_t port) : ic2_port(port)
+Sensor6050::Sensor6050(i2c_port_t port, mpu6050_acce_fs_t accSensitivity, mpu6050_gyro_fs_t rotSensitivity) : i2c_port(port), accelerationSensitivity(accSensitivity), rotationSensitivity(rotSensitivity)
 {
-    mpuHandle = mpu6050_create(ic2_port, MPU6050_I2C_ADDRESS);
-    mpu6050_config(mpuHandle, ACCE_FS_8G, GYRO_FS_2000DPS);
+    mpuHandle = mpu6050_create(i2c_port, MPU6050_I2C_ADDRESS);
+    mpu6050_config(mpuHandle, accelerationSensitivity, rotationSensitivity);
     mpu6050_wake_up(mpuHandle);
 }
 
@@ -79,23 +79,23 @@ int16_t Sensor6050::ReadAccelerationValue(uint16_t selected)
 {
     int16_t sensorValue = 0;
 
-    ESP_ERROR_CHECK_WITHOUT_ABORT(mpu6050_get_raw_acce(mpuHandle, &acceleration));
+    ESP_ERROR_CHECK_WITHOUT_ABORT(mpu6050_get_acce(mpuHandle, &acceleration));
 
     switch (selected)
     {
         case 0:
         {
-            sensorValue = acceleration.raw_acce_x;
+            sensorValue = acceleration.acce_x; 
             break;
         }
         case 1:
         {
-            sensorValue = acceleration.raw_acce_y;
+            sensorValue = acceleration.acce_x; 
             break;
         }
         case 2:
         {
-            sensorValue = acceleration.raw_acce_z;
+            sensorValue = acceleration.acce_x; 
             break;
         }
         default:
@@ -112,23 +112,23 @@ int16_t Sensor6050::ReadRotationValue(uint16_t selected)
 {
     int16_t sensorValue = 0;
 
-    ESP_ERROR_CHECK_WITHOUT_ABORT(mpu6050_get_raw_gyro(mpuHandle, &rotation));
+    ESP_ERROR_CHECK_WITHOUT_ABORT(mpu6050_get_gyro(mpuHandle, &rotation)); 
 
     switch (selected)
     {
         case 3:
         {
-            sensorValue = rotation.raw_gyro_x;
+            sensorValue =  rotation.gyro_x; 
             break;
         }
         case 4:
         {
-            sensorValue = rotation.raw_gyro_y;
+            sensorValue = rotation.gyro_y; 
             break;
         }
         case 5:
         {
-            sensorValue = rotation.raw_gyro_z;
+            sensorValue = rotation.gyro_z; 
             break;
         }
         default:
