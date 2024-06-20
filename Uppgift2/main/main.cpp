@@ -32,7 +32,7 @@ void OnButtonPressed(void *ptr);
 void OnButtonReleased(void *ptr);
 void RegisterComponents();
 void OnSelectedValueChanged(void *ptr);
-void UpdateReadout(void *ptr);
+void HandleButtons(void *ptr);
 
 std::string displayText = "";
 BaseType_t xReturned;
@@ -54,14 +54,17 @@ extern "C" void app_main(void)
 
     RegisterComponents();
 
-    xTaskCreate(UpdateReadout, "LcdPrint", 6000, (void *) 1, tskIDLE_PRIORITY, &xHandle);
+    xTaskCreate(HandleButtons, "ButtonEvent", 6000, (void *) 1, tskIDLE_PRIORITY, &xHandle);
 
     while(true)
     {
-        upButton->Update();
-        downButton->Update();
+        sensor->GetReadOut((uint16_t)selector->GetCurrentValue(), displayText);
 
+        // Send text to LCD display
+        lcd->lcd_print(displayText.c_str());
+        
         vTaskDelay(pdMS_TO_TICKS(50));
+        lcd->ClearScreen();
     }
 
     if(xHandle != NULL)
@@ -82,10 +85,10 @@ void RegisterComponents()
 
     ESP_LOGI(TAG,"Registering selector.");
     selector = new ValueSelector(SelectedValue_e::Acceleration_X);
-    selector->SetOnChanged(OnSelectedValueChanged, (void *)selector);
+    selector->SetOnChanged(NULL, (void *)selector);
 
     ESP_LOGI(TAG,"Registering mpu6050.");
-    sensor = new Sensor6050(I2C_PORT, ACCE_FS_16G, GYRO_FS_1000DPS);
+    sensor = new Sensor6050(I2C_PORT, ACCE_FS_2G, GYRO_FS_250DPS);
 
     ESP_LOGI(TAG,"Registering lcd 1602.");
     lcd = new LCD1602(I2C_SCL_PIN, I2C_SDA_PIN, I2C_PORT);
@@ -117,23 +120,24 @@ void OnButtonPressed(void *ptr)
 
 void OnSelectedValueChanged(void *ptr)
 {
-    ValueSelector selector = *((ValueSelector *)ptr);
+    // Left empty intentionally
 
+    ValueSelector selector = *((ValueSelector *)ptr);
+    
     // // Read the current value from the sensor.
     sensor->GetReadOut((uint16_t)selector.GetCurrentValue(), displayText);
 
+    lcd->ClearScreen();
+    lcd->lcd_print(displayText.c_str());
     // ESP_LOGI(TAG,"%s", text.data());
 }
 
-void UpdateReadout(void *ptr)
+void HandleButtons(void *ptr)
 {
     for(;;)
     {
-        sensor->GetReadOut((uint16_t)selector->GetCurrentValue(), displayText);
-
-        lcd->ClearScreen();
-        // Send text to LCD display
-        lcd->lcd_print(displayText.c_str());
+        upButton->Update();
+        downButton->Update();
 
         vTaskDelay(pdMS_TO_TICKS(50));
     }

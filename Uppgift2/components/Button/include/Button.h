@@ -18,7 +18,6 @@ class Button
         int64_t debounceTimer;
         onButton_cb onPressed = nullptr;
         onButton_cb onRelease = nullptr;
-
         void* onPressed_ptr = nullptr;
         void* onRelease_ptr = nullptr;
 
@@ -26,6 +25,7 @@ class Button
         gpio_num_t pin;
         PullType_e pullType;
         int status;
+
     public:
         Button(gpio_num_t pin);
         Button(gpio_num_t pin, PullType_e pullType);
