@@ -31,7 +31,6 @@ LCD1602 *lcd;
 void OnButtonPressed(void *ptr);
 void OnButtonReleased(void *ptr);
 void RegisterComponents();
-void OnSelectedValueChanged(void *ptr);
 void HandleButtons(void *ptr);
 
 std::string displayText = "";
@@ -48,6 +47,7 @@ extern "C" void app_main(void)
     i2cConfig.scl_pullup_en = GPIO_PULLUP_ENABLE;
     i2cConfig.sda_pullup_en = GPIO_PULLUP_ENABLE;
     i2cConfig.master.clk_speed = I2C_FREQ_HZ;
+    //i2cConfig.clk_flags = 0;
 
     ESP_ERROR_CHECK(i2c_param_config(I2C_PORT, &i2cConfig));
     ESP_ERROR_CHECK(i2c_driver_install(I2C_PORT, i2cConfig.mode, 0, 0, 0));
@@ -63,7 +63,7 @@ extern "C" void app_main(void)
         // Send text to LCD display
         lcd->lcd_print(displayText.c_str());
         
-        vTaskDelay(pdMS_TO_TICKS(50));
+        vTaskDelay(pdMS_TO_TICKS(75));
         lcd->ClearScreen();
     }
 
@@ -116,20 +116,6 @@ void OnButtonPressed(void *ptr)
     }
     
     // ESP_LOGI(TAG,"Button pressed on pin %d", pin);
-}
-
-void OnSelectedValueChanged(void *ptr)
-{
-    // Left empty intentionally
-
-    ValueSelector selector = *((ValueSelector *)ptr);
-    
-    // // Read the current value from the sensor.
-    sensor->GetReadOut((uint16_t)selector.GetCurrentValue(), displayText);
-
-    lcd->ClearScreen();
-    lcd->lcd_print(displayText.c_str());
-    // ESP_LOGI(TAG,"%s", text.data());
 }
 
 void HandleButtons(void *ptr)
