@@ -20,6 +20,9 @@
 #define I2C_FREQ_HZ 100000 // Standard-mode: 100KHz, Fast-mode: 400KHz. Should be max fast-mode if LCD isn't used otherwise 100 KHz
 #define I2C_PORT I2C_NUM_0
 
+#define ACC_SENSITIVITY ACCE_FS_2G
+#define GYRO_SENSITIVITY GYRO_FS_250DPS
+
 const char *TAG = "Main";
 
 Button *upButton;
@@ -88,7 +91,7 @@ void RegisterComponents()
     selector->SetOnChanged(NULL, (void *)selector);
 
     ESP_LOGI(TAG,"Registering mpu6050.");
-    sensor = new Sensor6050(I2C_PORT, ACCE_FS_2G, GYRO_FS_250DPS);
+    sensor = new Sensor6050(I2C_PORT, ACC_SENSITIVITY, GYRO_SENSITIVITY);
 
     ESP_LOGI(TAG,"Registering lcd 1602.");
     lcd = new LCD1602(I2C_SCL_PIN, I2C_SDA_PIN, I2C_PORT);
