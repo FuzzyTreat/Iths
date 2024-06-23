@@ -46,18 +46,37 @@ void ws2812::configure_led(void)
     // ESP_LOGI(TAG, "Created LED strip object with SPI backend");
 }
 
-esp_err_t ws2812::SetLedColor(LedColor_t led)
+esp_err_t ws2812::SetLedColor(LedColor_t &led)
 {
     return SetLedColor(led.Index, led.R, led.G, led.B);
 }
 
 esp_err_t ws2812::SetLedColor(uint32_t ledIndex, uint32_t r, uint32_t g, uint32_t b)
 {
-    return led_strip_set_pixel(led_strip, ledIndex, r,g, b);
+    return led_strip_set_pixel(led_strip, ledIndex, r, g, b);
 }
 
+void ws2812::ResetLeds()
+{
+    for(int i = 0; i < numberOfLeds; i++)
+    {
+        leds[i].R = 0;
+        leds[i].G = 0;
+        leds[i].B = 0;
+        leds[i].scaleFactor = 0;
+        leds[i].isOn = false;
+    }
+}
+
+/// @brief Applies the current settings stored in the led array to the led strip and then refreshes the strip.
+/// @return 
 esp_err_t ws2812::Update()
 {
+    for(int i = 0; i< numberOfLeds; i++)
+    {
+        SetLedColor(leds[i]);
+    }
+
     return led_strip_refresh(led_strip);
 }
 

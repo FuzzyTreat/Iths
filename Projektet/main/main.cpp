@@ -6,68 +6,113 @@
 #include "esp_log.h"
 #include "esp_err.h"
 #include <ws2812.h>
-#include <UltrasonicSensor.h>
+#include <ultrasonic.h>
 
 // Led strip
-#define RGB_LED_PIN GPIO_NUM_19
+#define RGB_LED_PIN GPIO_NUM_5
 #define NUMBER_OF_LEDS 8
+#define DEFAULT_LED_BRIGHTNESS 10
 
 // Ultrasonic
-#define TRIGGER_GPIO GPIO_NUM_14
-#define ECHO_GPIO GPIO_NUM_13
+#define TRIGGER_PIN GPIO_NUM_19
+#define ECHO_PIN GPIO_NUM_18
 #define MAX_DISTANCE_CM 500 // 5m max
+#define RANGE_STEP MAX_DISTANCE_CM / NUMBER_OF_LEDS
 
 const char *TAG = "Main";
 
 ws2812 *led_strip;
+ultrasonic_sensor_t sensor;
 
-
-void GetPixelColor(uint16_t index, LedColor_t &led);
+void GetLedColor(LedColor_t &led);
+void SetRangeLed(uint32_t range);
 void ultrasonic_test(void *pvParameters);
 
 extern "C" void app_main(void)
 {
-    // RED 255,0,0
-    // GREEN 0,255,0
-    // BLUE 0,0,255
+    led_strip = new ws2812(RGB_LED_PIN, NUMBER_OF_LEDS, LED_PIXEL_FORMAT_GRB, LED_MODEL_WS2812, SPI2_HOST);
+    led_strip->configure_led();
 
-    // GREEN 0,255,0
-    // YELLOW 255,255,0
-    // ORANGE 255,128,0
-    // RED 255,0,0
+    sensor.echo_pin = ECHO_PIN;
+    sensor.trigger_pin = TRIGGER_PIN;
 
-    // led_strip = new ws2812(RGB_LED_PIN, NUMBER_OF_LEDS, LED_PIXEL_FORMAT_GRB, LED_MODEL_WS2812, SPI2_HOST);
-    // led_strip->configure_led();
+    printf("Range_Step is %d cm\n 7 * RANGE_STEP is %d cm\n", RANGE_STEP, RANGE_STEP * 8);
 
-    // // bool led_on_off = false;
-    // // uint32_t R = 0;
-    // // uint32_t G = 0;
-    // // uint32_t B = 0;
-
-    // // ESP_LOGI(TAG, "Start blinking LED strip");
-    // while (1) 
-    // {
-    //     /* Set the LED pixel using RGB from 0 (0%) to 255 (100%) for each color */
-    //     for (int i = 0; i < LED_STRIP_LED_NUMBERS; i++) {
-            
-    //         GetPixelColor(i, led_strip->leds[i]);
-
-    //         ESP_ERROR_CHECK(led_strip->SetPixel(i , led_strip->leds[i]));
-    //         //ESP_ERROR_CHECK(led_strip_set_pixel(led_strip, i, R++, G++, B++));
-    //     }
-    //     /* Refresh the strip to send data */
-    //     ESP_ERROR_CHECK(led_strip->Update());
-
-    // //     ESP_LOGI(TAG,"R: %lu G: %lu B: %lu", R, G, B);
-    //     vTaskDelay(pdMS_TO_TICKS(500));
-    // }
-
+    // xTaskCreate(ultrasonic_test, "ultrasonic_test", configMINIMAL_STACK_SIZE * 3, NULL, 5, NULL);
+    
     // for(;;)
     // {
-    //     xTaskCreate(ultrasonic_test, "ultrasonic_test", configMINIMAL_STACK_SIZE * 3, NULL, 5, NULL);
-    //     vTaskDelay(pdMS_TO_TICKS(10));
+    //     ESP_ERROR_CHECK(led_strip->Update());
+
+    //     vTaskDelay(pdMS_TO_TICKS(50));
     // }
 }
+
+void ultrasonic_test(void *pvParameters)
+{
+    ultrasonic_init(&sensor);
+    uint32_t distance = 0;
+
+    while (true)
+    {
+        esp_err_t res = ultrasonic_measure_cm(&sensor, MAX_DISTANCE_CM, &distance);
+
+        if (res != ESP_OK)
+        {
+            switch (res)
+            {
+                case ESP_ERR_ULTRASONIC_PING:
+                    printf("\rCannot ping (device is in invalid state)\n");
+                    break;
+                case ESP_ERR_ULTRASONIC_PING_TIMEOUT:
+                    printf("\rPing timeout (no device found)\n");
+                    break;
+                case ESP_ERR_ULTRASONIC_ECHO_TIMEOUT:
+                    printf("\rEcho timeout (i.e. distance too big)\n");
+                    break;
+                default:
+                    printf("\r%s\n", esp_err_to_name(res));
+            }
+
+            led_strip->ResetLeds();
+        }
+        else
+        {
+            SetRangeLed(distance);
+
+            printf("\rDistance is: %lu cm ", distance);
+            fflush(stdout);
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(500));
+    }
+}
+
+void SetRangeLed(uint32_t range)
+{
+    led_strip->ResetLeds();
+
+    if(range - RANGE_STEP >= 0)
+    {
+        led_strip->leds[0].isOn = true;
+        led_strip->leds[0].scaleFactor = 10;
+        GetLedColor(led_strip->leds[0]);
+        led_strip->SetLedColor(led_strip->leds[0]);  
+    }
+    else
+    {
+        led_strip->leds[0].isOn = false;
+        led_strip->leds[0].scaleFactor = 0;
+        led_strip->leds[0].R = 0;
+        led_strip->leds[0].G = 0;
+        led_strip->leds[0].B = 0;
+        led_strip->SetLedColor(led_strip->leds[0]);  
+    }
+}
+
+// RED 255,0,0
+// GREEN 0,255,0
+// BLUE 0,0,255
 
 // GREEN 0,255,0
 // YELLOW 255,255,0
@@ -75,18 +120,18 @@ extern "C" void app_main(void)
 // RED 255,0,0
 
 /// @brief 0 - 255 set color register and brightness, so 0 is unlit, 255 is very bright
+/// Reduce the brightness of all 3 parts by the same factor
 /// @param index 
 /// @param led 
-void GetPixelColor(uint16_t index, LedColor_t &led)
+void GetLedColor(LedColor_t &led)
 {
-    switch(index)
+    switch(led.Index)
     {
         case 0:
         case 1:
         {
-            led.R = 0;
-            // led.G = 255;
-            led.G = 10;
+            led.R = DEFAULT_LED_BRIGHTNESS;
+            led.G = 0;
             led.B = 0;
             led.isOn = true;
             break;
@@ -94,8 +139,8 @@ void GetPixelColor(uint16_t index, LedColor_t &led)
         case 2:
         case 3:
         {
-            led.R = 10;
-            led.G = 10;
+            led.R = DEFAULT_LED_BRIGHTNESS;
+            led.G = DEFAULT_LED_BRIGHTNESS/2;
             led.B = 0;
             led.isOn = true;
             break;
@@ -103,8 +148,8 @@ void GetPixelColor(uint16_t index, LedColor_t &led)
         case 4:
         case 5:
         {
-            led.R = 10;
-            led.G = 5;
+            led.R = DEFAULT_LED_BRIGHTNESS;
+            led.G = DEFAULT_LED_BRIGHTNESS;
             led.B = 0;
             led.isOn = true;
             break;
@@ -112,8 +157,8 @@ void GetPixelColor(uint16_t index, LedColor_t &led)
         case 6:
         case 7:
         {
-            led.R = 10;
-            led.G = 0;
+            led.R = 0;
+            led.G = DEFAULT_LED_BRIGHTNESS;
             led.B = 0;
             led.isOn = true;
             break;
@@ -126,44 +171,5 @@ void GetPixelColor(uint16_t index, LedColor_t &led)
             led.isOn = false;
             break;
         }
-    }
-}
-
-
-void ultrasonic_test(void *pvParameters)
-{
-    ultrasonic_sensor_t sensor{
-        .trigger_pin = TRIGGER_GPIO,
-        .echo_pin = ECHO_GPIO,
-    };
-
-    ultrasonic_init(&sensor);
-
-    while (true)
-    {
-        float distance;
-        esp_err_t res = ultrasonic_measure(&sensor, MAX_DISTANCE_CM, &distance);
-        if (res != ESP_OK)
-        {
-            printf("Error %d: ", res);
-            switch (res)
-            {
-                case ESP_ERR_ULTRASONIC_PING:
-                    printf("Cannot ping (device is in invalid state)\n");
-                    break;
-                case ESP_ERR_ULTRASONIC_PING_TIMEOUT:
-                    printf("Ping timeout (no device found)\n");
-                    break;
-                case ESP_ERR_ULTRASONIC_ECHO_TIMEOUT:
-                    printf("Echo timeout (i.e. distance too big)\n");
-                    break;
-                default:
-                    printf("%s\n", esp_err_to_name(res));
-            }
-        }
-        else
-            printf("Distance: %0.04f cm\n", distance*100);
-
-        vTaskDelay(pdMS_TO_TICKS(500));
     }
 }

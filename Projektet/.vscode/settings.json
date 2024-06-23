@@ -17,5 +17,6 @@
     "idf.toolsPathWin": "C:\\Users\\Per\\.espressif",
     "files.associations": {
         "cstdint": "cpp"
-    }
+    },
+    "idf.flashType": "UART"
 }

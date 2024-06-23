@@ -1,9 +1,9 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <esp_timer.h>
-#include "UltrasonicSensor.h"
 #include "esp_idf_lib_helpers.h"
 #include "ets_sys.h"
+#include "ultrasonic.h"
 
 #define TRIGGER_LOW_DELAY 4
 #define TRIGGER_HIGH_DELAY 10
@@ -27,7 +27,6 @@ esp_err_t ultrasonic_init(const ultrasonic_sensor_t *dev)
 
     CHECK(gpio_set_direction(dev->trigger_pin, GPIO_MODE_OUTPUT));
     CHECK(gpio_set_direction(dev->echo_pin, GPIO_MODE_INPUT));
-
     return gpio_set_level(dev->trigger_pin, 0);
 }
 
@@ -59,6 +58,7 @@ esp_err_t ultrasonic_measure_raw(const ultrasonic_sensor_t *dev, uint32_t max_ti
     // got echo, measuring
     int64_t echo_start = esp_timer_get_time();
     int64_t time = echo_start;
+
     while (gpio_get_level(dev->echo_pin))
     {
         time = esp_timer_get_time();
