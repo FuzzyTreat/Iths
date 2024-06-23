@@ -6,15 +6,24 @@
 #include "esp_log.h"
 #include "esp_err.h"
 #include <ws2812.h>
+#include <UltrasonicSensor.h>
 
+// Led strip
 #define RGB_LED_PIN GPIO_NUM_19
 #define NUMBER_OF_LEDS 8
+
+// Ultrasonic
+#define TRIGGER_GPIO GPIO_NUM_14
+#define ECHO_GPIO GPIO_NUM_13
+#define MAX_DISTANCE_CM 500 // 5m max
 
 const char *TAG = "Main";
 
 ws2812 *led_strip;
 
+
 void GetPixelColor(uint16_t index, LedColor_t &led);
+void ultrasonic_test(void *pvParameters);
 
 extern "C" void app_main(void)
 {
@@ -51,6 +60,12 @@ extern "C" void app_main(void)
 
     // //     ESP_LOGI(TAG,"R: %lu G: %lu B: %lu", R, G, B);
     //     vTaskDelay(pdMS_TO_TICKS(500));
+    // }
+
+    // for(;;)
+    // {
+    //     xTaskCreate(ultrasonic_test, "ultrasonic_test", configMINIMAL_STACK_SIZE * 3, NULL, 5, NULL);
+    //     vTaskDelay(pdMS_TO_TICKS(10));
     // }
 }
 
@@ -111,5 +126,44 @@ void GetPixelColor(uint16_t index, LedColor_t &led)
             led.isOn = false;
             break;
         }
+    }
+}
+
+
+void ultrasonic_test(void *pvParameters)
+{
+    ultrasonic_sensor_t sensor{
+        .trigger_pin = TRIGGER_GPIO,
+        .echo_pin = ECHO_GPIO,
+    };
+
+    ultrasonic_init(&sensor);
+
+    while (true)
+    {
+        float distance;
+        esp_err_t res = ultrasonic_measure(&sensor, MAX_DISTANCE_CM, &distance);
+        if (res != ESP_OK)
+        {
+            printf("Error %d: ", res);
+            switch (res)
+            {
+                case ESP_ERR_ULTRASONIC_PING:
+                    printf("Cannot ping (device is in invalid state)\n");
+                    break;
+                case ESP_ERR_ULTRASONIC_PING_TIMEOUT:
+                    printf("Ping timeout (no device found)\n");
+                    break;
+                case ESP_ERR_ULTRASONIC_ECHO_TIMEOUT:
+                    printf("Echo timeout (i.e. distance too big)\n");
+                    break;
+                default:
+                    printf("%s\n", esp_err_to_name(res));
+            }
+        }
+        else
+            printf("Distance: %0.04f cm\n", distance*100);
+
+        vTaskDelay(pdMS_TO_TICKS(500));
     }
 }
