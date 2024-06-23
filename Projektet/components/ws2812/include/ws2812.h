@@ -19,8 +19,9 @@
 // #define SPI2_HOST 1
 
 typedef struct LedColor_t{
+    uint16_t Index;
     uint32_t R = 0;
-    uint32_t G = 0;
+    uint32_t G = 0; 
     uint32_t B = 0;
     bool isOn;
 } LedColor_t;
@@ -44,8 +45,8 @@ class ws2812
     LedColor_t leds[LED_STRIP_LED_NUMBERS]{};
     
     void configure_led(void);
-    esp_err_t SetPixel(uint32_t pixelIndex, uint32_t r, uint32_t g, uint32_t b);
-    esp_err_t SetPixel(uint32_t pixelIndex, LedColor_t led);
+    esp_err_t SetLedColor(uint32_t ledIndex, uint32_t r, uint32_t g, uint32_t b);
+    esp_err_t SetLedColor(LedColor_t led);
     esp_err_t Update();
     esp_err_t Clear();
 };

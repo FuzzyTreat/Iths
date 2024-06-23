@@ -10,10 +10,11 @@ ws2812::ws2812(gpio_num_t pin, uint16_t numOfLeds, led_pixel_format_t pixelForma
 {
     for(int i=0; i< numberOfLeds; i++)
     {
+        leds[i].Index = i;
         leds[i].R = 0;
         leds[i].G = 0;
         leds[i].B = 0;
-        leds[i].isOn = true;
+        leds[i].isOn = false;
     }
 }
 
@@ -45,14 +46,14 @@ void ws2812::configure_led(void)
     // ESP_LOGI(TAG, "Created LED strip object with SPI backend");
 }
 
-esp_err_t ws2812::SetPixel(uint32_t pixelIndex, LedColor_t led)
+esp_err_t ws2812::SetLedColor(LedColor_t led)
 {
-    return SetPixel(pixelIndex, led.R, led.G, led.B);
+    return SetLedColor(led.Index, led.R, led.G, led.B);
 }
 
-esp_err_t ws2812::SetPixel(uint32_t pixelIndex, uint32_t r, uint32_t g, uint32_t b)
+esp_err_t ws2812::SetLedColor(uint32_t ledIndex, uint32_t r, uint32_t g, uint32_t b)
 {
-    return led_strip_set_pixel(led_strip, pixelIndex, r,g, b);
+    return led_strip_set_pixel(led_strip, ledIndex, r,g, b);
 }
 
 esp_err_t ws2812::Update()
