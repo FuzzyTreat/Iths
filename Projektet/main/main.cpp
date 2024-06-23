@@ -17,7 +17,7 @@
 #define TRIGGER_PIN GPIO_NUM_19
 #define ECHO_PIN GPIO_NUM_18
 #define MAX_DISTANCE_CM 500 // 5m max
-#define RANGE_STEP MAX_DISTANCE_CM / NUMBER_OF_LEDS
+#define RANGE_STEP MAX_DISTANCE_CM / 8
 
 const char *TAG = "Main";
 
@@ -84,7 +84,7 @@ void ultrasonic_test(void *pvParameters)
             fflush(stdout);
         }
 
-        vTaskDelay(pdMS_TO_TICKS(500));
+        vTaskDelay(pdMS_TO_TICKS(250));
     }
 }
 
@@ -92,21 +92,35 @@ void SetRangeLed(uint32_t range)
 {
     led_strip->ResetLeds();
 
-    if(range - RANGE_STEP >= 0)
+    uint32_t step = RANGE_STEP;
+
+    for(int i = 0; i < NUMBER_OF_LEDS; i++)
     {
-        led_strip->leds[0].isOn = true;
-        led_strip->leds[0].scaleFactor = 10;
-        GetLedColor(led_strip->leds[0]);
-        led_strip->SetLedColor(led_strip->leds[0]);  
-    }
-    else
-    {
-        led_strip->leds[0].isOn = false;
-        led_strip->leds[0].scaleFactor = 0;
-        led_strip->leds[0].R = 0;
-        led_strip->leds[0].G = 0;
-        led_strip->leds[0].B = 0;
-        led_strip->SetLedColor(led_strip->leds[0]);  
+        if(i == 0)
+        {
+            led_strip->leds[i].isOn = true;
+            led_strip->leds[i].scaleFactor = 10;
+            GetLedColor(led_strip->leds[i]);
+            led_strip->SetLedColor(led_strip->leds[i]);  
+        }
+        else if(step <= range)
+        {
+            led_strip->leds[i].isOn = true;
+            led_strip->leds[i].scaleFactor = 10;
+            GetLedColor(led_strip->leds[i]);
+            led_strip->SetLedColor(led_strip->leds[i]);  
+        }
+        else
+        {
+            led_strip->leds[i].isOn = false;
+            led_strip->leds[i].scaleFactor = 0;
+            led_strip->leds[i].R = 0;
+            led_strip->leds[i].G = 0;
+            led_strip->leds[i].B = 0;
+            led_strip->SetLedColor(led_strip->leds[i]);  
+        }
+
+        step = step + RANGE_STEP;
     }
 }
 
