@@ -11,6 +11,12 @@ Joystick::Joystick(gpio_num_t buttonPin, adc1_channel_t xPin, adc1_channel_t yPi
     adc1_config_width(ADC_WIDTH_BIT_12);
     adc1_config_channel_atten(xPin, ADC_ATTEN_DB_12);
     adc1_config_channel_atten(yPin, ADC_ATTEN_DB_12);
+
+    gpio_set_direction(buttonPin, GPIO_MODE_INPUT);
+    gpio_intr_disable(buttonPin);
+    gpio_pulldown_en(buttonPin);
+    gpio_pullup_dis(buttonPin);
+    gpio_set_level(buttonPin, 0);
 }
 
 Joystick::~Joystick()

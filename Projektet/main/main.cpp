@@ -7,6 +7,7 @@
 #include "esp_err.h"
 #include <ws2812.h>
 #include <ultrasonic.h>
+#include <Joystick.h>
 
 // Led strip
 #define RGB_LED_PIN GPIO_NUM_5
@@ -16,17 +17,23 @@
 // Ultrasonic
 #define TRIGGER_PIN GPIO_NUM_19
 #define ECHO_PIN GPIO_NUM_18
-#define MAX_DISTANCE_CM 500 // 5m max
+#define MAX_DISTANCE_CM 80 // 5m max
 #define RANGE_STEP MAX_DISTANCE_CM / 8
+
+#define JOYSTICK_BUTTON_PIN GPIO_NUM_21
+#define JOYSTICK_X_AXIS_CHANNEL ADC1_CHANNEL_3
+#define JOYSTICK_Y_AXIS_CHANNEL ADC1_CHANNEL_0
 
 const char *TAG = "Main";
 
 ws2812 *led_strip;
 ultrasonic_sensor_t sensor;
+Joystick *joystick;
 
 void GetLedColor(LedColor_t &led);
 void SetRangeLed(uint32_t range);
-void ultrasonic_test(void *pvParameters);
+void measure_range(void *pvParameters);
+void onButtonPressed(void *ptr);
 
 extern "C" void app_main(void)
 {
@@ -36,19 +43,28 @@ extern "C" void app_main(void)
     sensor.echo_pin = ECHO_PIN;
     sensor.trigger_pin = TRIGGER_PIN;
 
-    printf("Range_Step is %d cm\n 7 * RANGE_STEP is %d cm\n", RANGE_STEP, RANGE_STEP * 8);
+    joystick = new Joystick(JOYSTICK_BUTTON_PIN, JOYSTICK_X_AXIS_CHANNEL, JOYSTICK_Y_AXIS_CHANNEL);
+    joystick->SetOnPressed(onButtonPressed, joystick);
 
-    // xTaskCreate(ultrasonic_test, "ultrasonic_test", configMINIMAL_STACK_SIZE * 3, NULL, 5, NULL);
+    // xTaskCreate(measure_range, "ultrasonic_range", configMINIMAL_STACK_SIZE * 3, NULL, 5, NULL);
     
     // for(;;)
     // {
-    //     ESP_ERROR_CHECK(led_strip->Update());
+    //     joystick->Update();
+    //     //ESP_ERROR_CHECK(led_strip->Update());
+    //     printf("\rJoy X: %d Joy Y: %d    ", joystick->GetPosition().x, joystick->GetPosition().y);
 
-    //     vTaskDelay(pdMS_TO_TICKS(50));
+    //     vTaskDelay(pdMS_TO_TICKS(100));
     // }
 }
 
-void ultrasonic_test(void *pvParameters)
+void onButtonPressed(void *ptr)
+{
+    Joystick stick = *((Joystick *)ptr);
+    printf("Joystick button was pressed.\n");
+}
+
+void measure_range(void *pvParameters)
 {
     ultrasonic_init(&sensor);
     uint32_t distance = 0;
@@ -99,14 +115,14 @@ void SetRangeLed(uint32_t range)
         if(i == 0)
         {
             led_strip->leds[i].isOn = true;
-            led_strip->leds[i].scaleFactor = 10;
+            led_strip->leds[i].scaleFactor = DEFAULT_LED_BRIGHTNESS;
             GetLedColor(led_strip->leds[i]);
             led_strip->SetLedColor(led_strip->leds[i]);  
         }
         else if(step <= range)
         {
             led_strip->leds[i].isOn = true;
-            led_strip->leds[i].scaleFactor = 10;
+            led_strip->leds[i].scaleFactor = DEFAULT_LED_BRIGHTNESS;
             GetLedColor(led_strip->leds[i]);
             led_strip->SetLedColor(led_strip->leds[i]);  
         }
@@ -134,7 +150,7 @@ void SetRangeLed(uint32_t range)
 // RED 255,0,0
 
 /// @brief 0 - 255 set color register and brightness, so 0 is unlit, 255 is very bright
-/// Reduce the brightness of all 3 parts by the same factor
+/// Reduce the brightness of all 3 colors by the same factor
 /// @param index 
 /// @param led 
 void GetLedColor(LedColor_t &led)
