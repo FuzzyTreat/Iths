@@ -8,6 +8,7 @@
 #include <ws2812.h>
 #include <ultrasonic.h>
 #include <Joystick.h>
+#include <Servo.h>
 
 // Led strip
 #define RGB_LED_PIN GPIO_NUM_5
@@ -17,18 +18,24 @@
 // Ultrasonic
 #define TRIGGER_PIN GPIO_NUM_19
 #define ECHO_PIN GPIO_NUM_18
-#define MAX_DISTANCE_CM 80 // 5m max
+#define MAX_DISTANCE_CM 80 // 80 cm max ( 5 m max if changed )
 #define RANGE_STEP MAX_DISTANCE_CM / 8
 
+// Joystick
 #define JOYSTICK_BUTTON_PIN GPIO_NUM_21
 #define JOYSTICK_X_AXIS_CHANNEL ADC1_CHANNEL_3
 #define JOYSTICK_Y_AXIS_CHANNEL ADC1_CHANNEL_0
+
+// Servo motor
+#define SERVO_PIN GPIO_NUM_15
+#define SERVO_LEDC_CHANNEL LEDC_CHANNEL_0
 
 const char *TAG = "Main";
 
 ws2812 *led_strip;
 ultrasonic_sensor_t sensor;
 Joystick *joystick;
+Servo *servo;
 
 void GetLedColor(LedColor_t &led);
 void SetRangeLed(uint32_t range);
@@ -46,11 +53,14 @@ extern "C" void app_main(void)
     joystick = new Joystick(JOYSTICK_BUTTON_PIN, JOYSTICK_X_AXIS_CHANNEL, JOYSTICK_Y_AXIS_CHANNEL);
     joystick->SetOnPressed(onButtonPressed, joystick);
 
+    servo = new Servo(SERVO_PIN, SERVO_LEDC_CHANNEL);
+
     // xTaskCreate(measure_range, "ultrasonic_range", configMINIMAL_STACK_SIZE * 3, NULL, 5, NULL);
     
     // for(;;)
     // {
     //     joystick->Update();
+            // servo->Update();
     //     //ESP_ERROR_CHECK(led_strip->Update());
     //     printf("\rJoy X: %d Joy Y: %d    ", joystick->GetPosition().x, joystick->GetPosition().y);
 
