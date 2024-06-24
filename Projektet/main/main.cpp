@@ -9,6 +9,7 @@
 #include <ultrasonic.h>
 #include <Joystick.h>
 #include <Servo.h>
+#include <LedManager.h>
 
 // Led strip
 #define RGB_LED_PIN GPIO_NUM_5
@@ -36,9 +37,10 @@ ws2812 *led_strip;
 ultrasonic_sensor_t sensor;
 Joystick *joystick;
 Servo *servo;
+LedManager *ledManager;
 
-void GetLedColor(LedColor_t &led);
-void SetRangeLed(uint32_t range);
+// void GetLedColor(LedColor_t &led);
+// void SetRangeLed(uint32_t range);
 void measure_range(void *pvParameters);
 void onButtonPressed(void *ptr);
 
@@ -54,6 +56,8 @@ extern "C" void app_main(void)
     joystick->SetOnPressed(onButtonPressed, joystick);
 
     servo = new Servo(SERVO_PIN, SERVO_LEDC_CHANNEL);
+
+    ledManager = new LedManager(DEFAULT_LED_BRIGHTNESS, NUMBER_OF_LEDS, MAX_DISTANCE_CM, RANGE_STEP);
 
     // xTaskCreate(measure_range, "ultrasonic_range", configMINIMAL_STACK_SIZE * 3, NULL, 5, NULL);
     
@@ -104,112 +108,12 @@ void measure_range(void *pvParameters)
         }
         else
         {
-            SetRangeLed(distance);
+            ledManager->SetRangeLed(led_strip, distance);
 
             printf("\rDistance is: %lu cm ", distance);
             fflush(stdout);
         }
 
         vTaskDelay(pdMS_TO_TICKS(250));
-    }
-}
-
-void SetRangeLed(uint32_t range)
-{
-    led_strip->ResetLeds();
-
-    uint32_t step = RANGE_STEP;
-
-    for(int i = 0; i < NUMBER_OF_LEDS; i++)
-    {
-        if(i == 0)
-        {
-            led_strip->leds[i].isOn = true;
-            led_strip->leds[i].scaleFactor = DEFAULT_LED_BRIGHTNESS;
-            GetLedColor(led_strip->leds[i]);
-            led_strip->SetLedColor(led_strip->leds[i]);  
-        }
-        else if(step <= range)
-        {
-            led_strip->leds[i].isOn = true;
-            led_strip->leds[i].scaleFactor = DEFAULT_LED_BRIGHTNESS;
-            GetLedColor(led_strip->leds[i]);
-            led_strip->SetLedColor(led_strip->leds[i]);  
-        }
-        else
-        {
-            led_strip->leds[i].isOn = false;
-            led_strip->leds[i].scaleFactor = 0;
-            led_strip->leds[i].R = 0;
-            led_strip->leds[i].G = 0;
-            led_strip->leds[i].B = 0;
-            led_strip->SetLedColor(led_strip->leds[i]);  
-        }
-
-        step = step + RANGE_STEP;
-    }
-}
-
-// RED 255,0,0
-// GREEN 0,255,0
-// BLUE 0,0,255
-
-// GREEN 0,255,0
-// YELLOW 255,255,0
-// ORANGE 255,128,0
-// RED 255,0,0
-
-/// @brief 0 - 255 set color register and brightness, so 0 is unlit, 255 is very bright
-/// Reduce the brightness of all 3 colors by the same factor
-/// @param index 
-/// @param led 
-void GetLedColor(LedColor_t &led)
-{
-    switch(led.Index)
-    {
-        case 0:
-        case 1:
-        {
-            led.R = DEFAULT_LED_BRIGHTNESS;
-            led.G = 0;
-            led.B = 0;
-            led.isOn = true;
-            break;
-        }
-        case 2:
-        case 3:
-        {
-            led.R = DEFAULT_LED_BRIGHTNESS;
-            led.G = DEFAULT_LED_BRIGHTNESS/2;
-            led.B = 0;
-            led.isOn = true;
-            break;
-        }
-        case 4:
-        case 5:
-        {
-            led.R = DEFAULT_LED_BRIGHTNESS;
-            led.G = DEFAULT_LED_BRIGHTNESS;
-            led.B = 0;
-            led.isOn = true;
-            break;
-        }
-        case 6:
-        case 7:
-        {
-            led.R = 0;
-            led.G = DEFAULT_LED_BRIGHTNESS;
-            led.B = 0;
-            led.isOn = true;
-            break;
-        }
-        default:
-        {
-            led.R = 0;
-            led.G = 0;
-            led.B = 0;
-            led.isOn = false;
-            break;
-        }
     }
 }
