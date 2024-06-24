@@ -23,7 +23,7 @@
 #define RANGE_STEP MAX_DISTANCE_CM / 8
 
 // Joystick
-#define JOYSTICK_BUTTON_PIN GPIO_NUM_21
+#define JOYSTICK_BUTTON_PIN GPIO_NUM_15
 #define JOYSTICK_X_AXIS_CHANNEL ADC1_CHANNEL_3
 #define JOYSTICK_Y_AXIS_CHANNEL ADC1_CHANNEL_0
 
@@ -41,7 +41,8 @@ LedManager *ledManager;
 
 // void GetLedColor(LedColor_t &led);
 // void SetRangeLed(uint32_t range);
-void measure_range(void *pvParameters);
+void measure_task(void *pvParameters);
+void joystick_task(void *ptr);
 void onButtonPressed(void *ptr);
 
 extern "C" void app_main(void)
@@ -55,30 +56,37 @@ extern "C" void app_main(void)
     joystick = new Joystick(JOYSTICK_BUTTON_PIN, JOYSTICK_X_AXIS_CHANNEL, JOYSTICK_Y_AXIS_CHANNEL);
     joystick->SetOnPressed(onButtonPressed, joystick);
 
-    servo = new Servo(SERVO_PIN, SERVO_LEDC_CHANNEL);
+    // servo = new Servo(SERVO_PIN, SERVO_LEDC_CHANNEL);
 
-    ledManager = new LedManager(DEFAULT_LED_BRIGHTNESS, NUMBER_OF_LEDS, MAX_DISTANCE_CM, RANGE_STEP);
+    // ledManager = new LedManager(DEFAULT_LED_BRIGHTNESS, NUMBER_OF_LEDS, MAX_DISTANCE_CM, RANGE_STEP);
 
-    // xTaskCreate(measure_range, "ultrasonic_range", configMINIMAL_STACK_SIZE * 3, NULL, 5, NULL);
-    
-    // for(;;)
-    // {
-    //     joystick->Update();
-            // servo->Update();
-    //     //ESP_ERROR_CHECK(led_strip->Update());
-    //     printf("\rJoy X: %d Joy Y: %d    ", joystick->GetPosition().x, joystick->GetPosition().y);
+    // xTaskCreate(measure_task, "ultrasonic_range", configMINIMAL_STACK_SIZE * 3, NULL, 5, NULL);
+    xTaskCreate(joystick_task, "JoystickEvent", configMINIMAL_STACK_SIZE * 3, NULL, tskIDLE_PRIORITY, NULL);
 
-    //     vTaskDelay(pdMS_TO_TICKS(100));
-    // }
+    for(;;)
+    {
+        //servo->Update();
+        //ESP_ERROR_CHECK(led_strip->Update());
+        vTaskDelay(pdMS_TO_TICKS(100));
+    }
 }
 
 void onButtonPressed(void *ptr)
 {
-    Joystick stick = *((Joystick *)ptr);
-    printf("Joystick button was pressed.\n");
+    Button button = *((Button *)ptr);
+    printf("Joy X: %d Joy Y: %d    \n", joystick->GetPosition().x, joystick->GetPosition().y);
 }
 
-void measure_range(void *pvParameters)
+void joystick_task(void *ptr)
+{
+    for(;;)
+    {
+        joystick->Update();
+        vTaskDelay(pdMS_TO_TICKS(100));
+    }
+}
+
+void measure_task(void *pvParameters)
 {
     ultrasonic_init(&sensor);
     uint32_t distance = 0;

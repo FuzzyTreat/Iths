@@ -15,8 +15,8 @@
 #define UP_BUTTON_PIN GPIO_NUM_18
 #define DOWN_BUTTON_PIN GPIO_NUM_19
 
-#define I2C_SDA_PIN GPIO_NUM_13
-#define I2C_SCL_PIN GPIO_NUM_14
+#define I2C_SDA_PIN GPIO_NUM_21 // GPIO_NUM_13
+#define I2C_SCL_PIN GPIO_NUM_22 // GPIO_NUM_14 
 #define I2C_FREQ_HZ 100000 // Standard-mode: 100KHz, Fast-mode: 400KHz. Should be max fast-mode if LCD isn't used otherwise 100 KHz
 #define I2C_PORT I2C_NUM_0
 
@@ -42,6 +42,7 @@ TaskHandle_t xHandle = NULL;
 
 extern "C" void app_main(void)
 {
+    uint8_t deviceId = -1;
     i2c_config_t i2cConfig;
 
     i2cConfig.mode = I2C_MODE_MASTER;
@@ -57,45 +58,49 @@ extern "C" void app_main(void)
 
     RegisterComponents();
 
-    xTaskCreate(HandleButtons, "ButtonEvent", 6000, (void *) 1, tskIDLE_PRIORITY, &xHandle);
+    // xTaskCreate(HandleButtons, "ButtonEvent", 6000, (void *) 1, tskIDLE_PRIORITY, &xHandle);
 
-    while(true)
-    {
-        sensor->GetReadOut((uint16_t)selector->GetCurrentValue(), displayText);
+    // while(true)
+    // {
+        // sensor->GetReadOut((uint16_t)selector->GetCurrentValue(), displayText);
 
         // Send text to LCD display
-        lcd->lcd_print(displayText.c_str());
+        // lcd->lcd_print(displayText.c_str());
         
-        vTaskDelay(pdMS_TO_TICKS(75));
-        lcd->ClearScreen();
-    }
+        // vTaskDelay(pdMS_TO_TICKS(75));
+        // lcd->ClearScreen();
+    // }
 
-    if(xHandle != NULL)
-    {
-        vTaskDelete(xHandle);
-    }
+    sensor->GetDeviceId(&deviceId);
+
+    printf("DeviceId: %d \n", deviceId);
+
+    // if(xHandle != NULL)
+    // {
+    //     vTaskDelete(xHandle);
+    // }
 }
 
 void RegisterComponents()
 {
-    ESP_LOGI(TAG,"Registering up button.");
-    upButton = new Button(UP_BUTTON_PIN, PT_none);
-    upButton->SetOnPressed(OnButtonPressed, (void *)upButton);
+    // ESP_LOGI(TAG,"Registering up button.");
+    // upButton = new Button(UP_BUTTON_PIN, PT_none);
+    // upButton->SetOnPressed(OnButtonPressed, (void *)upButton);
 
-    ESP_LOGI(TAG,"Registering down button.");
-    downButton = new Button(DOWN_BUTTON_PIN, PT_none);
-    downButton->SetOnPressed(OnButtonPressed, (void *)downButton);
+    // ESP_LOGI(TAG,"Registering down button.");
+    // downButton = new Button(DOWN_BUTTON_PIN, PT_none);
+    // downButton->SetOnPressed(OnButtonPressed, (void *)downButton);
 
-    ESP_LOGI(TAG,"Registering selector.");
-    selector = new ValueSelector(SelectedValue_e::Acceleration_X);
-    selector->SetOnChanged(NULL, (void *)selector);
+    // ESP_LOGI(TAG,"Registering selector.");
+    // selector = new ValueSelector(SelectedValue_e::Acceleration_X);
+    // selector->SetOnChanged(NULL, (void *)selector);
 
     ESP_LOGI(TAG,"Registering mpu6050.");
     sensor = new Sensor6050(I2C_PORT, ACC_SENSITIVITY, GYRO_SENSITIVITY);
 
-    ESP_LOGI(TAG,"Registering lcd 1602.");
-    lcd = new LCD1602(I2C_SCL_PIN, I2C_SDA_PIN, I2C_PORT);
-    lcd->lcd_init();
+    // ESP_LOGI(TAG,"Registering lcd 1602.");
+    // lcd = new LCD1602(I2C_SCL_PIN, I2C_SDA_PIN, I2C_PORT);
+    // lcd->lcd_init();
 }
 
 void OnButtonPressed(void *ptr)

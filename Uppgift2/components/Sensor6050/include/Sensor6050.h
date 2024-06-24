@@ -33,6 +33,7 @@ class Sensor6050
         ~Sensor6050();
         void GetReadOut(uint16_t selected, std::string &text);
         int16_t ReadValue(uint16_t selected);
+        void GetDeviceId(uint8_t *deviceid);
 };
 
 #endif

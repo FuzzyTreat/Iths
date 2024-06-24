@@ -14,6 +14,11 @@ Sensor6050::Sensor6050(i2c_port_t port, mpu6050_acce_fs_t accSensitivity, mpu605
 
 Sensor6050::~Sensor6050(){}
 
+void Sensor6050::GetDeviceId(uint8_t *deviceid)
+{
+    mpu6050_get_deviceid(mpuHandle, deviceid); 
+}
+
 void Sensor6050::GetReadOut(uint16_t selected, std::string &text)
 {
     int16_t value = ReadValue(selected);
