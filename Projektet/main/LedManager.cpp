@@ -12,6 +12,11 @@ void LedManager::SetRangeLed(ws2812 *led_strip, uint32_t range)
 {
     led_strip->ResetLeds();
 
+    if(range > maxDistance)
+    {
+        return;    
+    }
+
     uint32_t step = rangeStep;
 
     for(int i = 0; i < numberOfLeds; i++)

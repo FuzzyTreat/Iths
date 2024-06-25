@@ -20,50 +20,13 @@ Joystick::Joystick(gpio_num_t buttonPin, adc1_channel_t xPin, adc1_channel_t yPi
 
 Joystick::~Joystick()
 {
-
-}
-
-void Joystick::SetOnXPressed(onJoystick_cb onPressed, void *ptr)
-{
-    this->onXPressed = onPressed;
-    this->onXPressed_ptr = ptr;
-}
-void Joystick::SetOnXRelease(onJoystick_cb OnRelease, void *ptr)
-{
-    this->onXPressed = OnRelease;
-    this->onXPressed_ptr = ptr;
+    
 }
 
 void Joystick::Update()
 {
-    int newXStatus;
-    int newYStatus;
-
-    newXStatus = position.x = adc1_get_raw(xPin);
-    newYStatus = position.y = adc1_get_raw(yPin);
-
-    if(newXStatus != xStatus)
-    {
-        xStatus = newXStatus;
-
-        if(onXRelease && xStatus == 0)
-        {
-            onXRelease(onXRelease_ptr);
-        }
-        else if(onXPressed && xStatus == 1)
-        {
-            onXPressed(onXPressed_ptr);
-        }
-
-        if(onYRelease && yStatus == 0)
-        {
-            onYRelease(onYRelease_ptr);
-        }
-        else if(onYPressed && yStatus == 1)
-        {
-            onYPressed(onYPressed_ptr);
-        }
-    }
+    position.x = adc1_get_raw(xPin);
+    position.y = adc1_get_raw(yPin);
 
     Button::Update();
 }
