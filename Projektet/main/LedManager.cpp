@@ -18,34 +18,42 @@ void LedManager::SetRangeLed(ws2812 *led_strip, uint32_t range)
     }
 
     uint32_t step = rangeStep;
+    uint16_t ledNum = 0;
 
-    for(int i = 0; i < numberOfLeds; i++)
+    for(int i = 0; i < 160; i++)
     {
-        if(i == 0)
+        if(i % 10 == 0)
         {
-            led_strip->leds[i].isOn = true;
-            led_strip->leds[i].scaleFactor = brightness;
-            GetLedColor(led_strip->leds[i]);
-            led_strip->SetLedColor(led_strip->leds[i]);  
-        }
-        else if(step <= range)
-        {
-            led_strip->leds[i].isOn = true;
-            led_strip->leds[i].scaleFactor = brightness;
-            GetLedColor(led_strip->leds[i]);
-            led_strip->SetLedColor(led_strip->leds[i]);  
+            ledNum++;
         }
         else
         {
-            led_strip->leds[i].isOn = false;
-            led_strip->leds[i].scaleFactor = 0;
-            led_strip->leds[i].R = 0;
-            led_strip->leds[i].G = 0;
-            led_strip->leds[i].B = 0;
-            led_strip->SetLedColor(led_strip->leds[i]);  
-        }
+            if(ledNum == 0)
+            {
+                led_strip->leds[ledNum].isOn = true;
+                led_strip->leds[ledNum].scaleFactor += 1;
+                GetLedColor(led_strip->leds[ledNum]);
+                led_strip->SetLedColor(led_strip->leds[ledNum]);  
+            }
+            else if(step <= range)
+            {
+                led_strip->leds[ledNum].isOn = true;
+                led_strip->leds[ledNum].scaleFactor += 1;
+                GetLedColor(led_strip->leds[ledNum]);
+                led_strip->SetLedColor(led_strip->leds[ledNum]);  
+            }
+            else
+            {
+                led_strip->leds[ledNum].isOn = false;
+                led_strip->leds[ledNum].scaleFactor = 0;
+                led_strip->leds[ledNum].R = 0;
+                led_strip->leds[ledNum].G = 0;
+                led_strip->leds[ledNum].B = 0;
+                led_strip->SetLedColor(led_strip->leds[ledNum]);  
+            }
 
-        step = step + rangeStep;
+            step = step + rangeStep; 
+        }
     }
 }
 
