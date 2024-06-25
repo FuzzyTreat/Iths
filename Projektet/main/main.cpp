@@ -47,8 +47,9 @@ ws2812 *led_strip;
 ultrasonic_sensor_t uc_sensor;
 Joystick *joystick;
 Servo *servo;
-LedManager *ledManager;
 LCD1602 *lcd;
+
+LedManager *ledManager;
 
 void measure_task(void *pvParameters);
 void joystick_task(void *ptr);
@@ -111,8 +112,6 @@ void RegisterComponents()
 
 void onJoyButtonPressed(void *ptr)
 {
-    printf("Joystick button was pressed.\n");
-
     displayText = "Range: ";
     displayText += std::to_string(distance); 
     displayText += " cm";
@@ -137,8 +136,6 @@ void joystick_task(void *ptr)
             {
                 angle = 180;
             }
-
-            printf("Pressed to the right, angle:  %f \n", angle);
         }
         else if(joystick->GetPosition().x > centerValue + 30)
         {
@@ -148,8 +145,6 @@ void joystick_task(void *ptr)
             {
                 angle = 0;
             }
-
-            printf("Pressed to the left, angle:  %f \n", angle);
         }
 
         vTaskDelay(pdMS_TO_TICKS(100));
@@ -160,7 +155,6 @@ void measure_task(void *pvParameters)
 {
     ultrasonic_init(&uc_sensor);
 
-
     while (true)
     {
         esp_err_t res = ultrasonic_measure_cm(&uc_sensor, MAX_DISTANCE_CM, &distance);
@@ -170,26 +164,31 @@ void measure_task(void *pvParameters)
             switch (res)
             {
                 case ESP_ERR_ULTRASONIC_PING:
-                    printf("\rCannot ping (device is in invalid state)\n");
+                    lcd->ClearScreen();
+                    lcd->lcd_print("Bad device state");
+                    // printf("\rCannot ping (device is in invalid state)\n");
                     break;
                 case ESP_ERR_ULTRASONIC_PING_TIMEOUT:
-                    printf("\rPing timeout (no device found)\n");
+                    lcd->ClearScreen();
+                    lcd->lcd_print("Invalid device");
+                    // printf("\rPing timeout (no device found)\n");
                     break;
                 case ESP_ERR_ULTRASONIC_ECHO_TIMEOUT:
-                    printf("\rEcho timeout (i.e. distance too big)\n");
+                    // printf("\rEcho timeout (i.e. distance too big)\n");
+                    lcd->ClearScreen();
+                    lcd->lcd_print("Out of range");
                     break;
                 default:
-                    printf("\r%s\n", esp_err_to_name(res));
+                    // printf("\r%s\n", esp_err_to_name(res));
+                    lcd->ClearScreen();
+                    lcd->lcd_print("An error occurred");
             }
 
             led_strip->ResetLeds();
         }
         else
         {
-            ledManager->SetRangeLed(led_strip, distance);
-
-            printf("\rDistance is: %lu cm ", distance);
-            fflush(stdout);
+           ledManager->SetRangeLed(led_strip, distance);
         }
 
         vTaskDelay(pdMS_TO_TICKS(250));
