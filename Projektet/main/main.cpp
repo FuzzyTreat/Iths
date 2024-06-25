@@ -81,6 +81,8 @@ extern "C" void app_main(void)
     xTaskCreate(measure_task, "ultrasonic_range", configMINIMAL_STACK_SIZE * 3, NULL, 5, NULL);
     xTaskCreate(joystick_task, "JoystickEvent", configMINIMAL_STACK_SIZE * 3, &angle, tskIDLE_PRIORITY, NULL);
 
+    lcd->ClearScreen();
+
     for(;;)
     {
         servo->Update(angle);
