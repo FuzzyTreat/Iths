@@ -4,7 +4,7 @@ static const char *TAG = "Servo";
 
 Servo::Servo(gpio_num_t pin, ledc_channel_t channel):pin(pin), channel(channel)
 {
-        // PWM TIMER
+    // PWM TIMER
     ledc_timer_config_t timerConfig;
     timerConfig.clk_cfg = LEDC_AUTO_CLK;
     timerConfig.duty_resolution = LEDC_TIMER_12_BIT;
